@@ -12,27 +12,42 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as accountsIndex } from '@/routes/accounts';
+import { index as transactionsIndex } from '@/routes/transactions';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Wallet, Receipt } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
 import AppLogo from './AppLogo.vue';
+
+const { t } = useI18n();
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: t('app.dashboard'),
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Accounts',
+        href: accountsIndex().url,
+        icon: Wallet,
+    },
+    {
+        title: 'Transactions',
+        href: transactionsIndex().url,
+        icon: Receipt,
     },
 ];
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Github Repo',
+        title: t('app.github_repo'),
         href: 'https://github.com/laravel/vue-starter-kit',
         icon: Folder,
     },
     {
-        title: 'Documentation',
+        title: t('app.documentation'),
         href: 'https://laravel.com/docs/starter-kits#vue',
         icon: BookOpen,
     },
