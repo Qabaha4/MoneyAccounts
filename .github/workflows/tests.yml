@@ -14,6 +14,16 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,14 +31,15 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.4
+          php-version: 8.2
           tools: composer:v2
           coverage: xdebug
+          extensions: pdo, pdo_mysql, mysql
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install Node Dependencies
@@ -42,6 +53,21 @@ jobs:
 
       - name: Generate Application Key
         run: php artisan key:generate
+
+      - name: Set Database Environment
+        run: |
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=testing" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=password" >> .env
+
+      - name: Run Migrations
+        run: php artisan migrate --force
+
+      - name: Seed Database
+        run: php artisan db:seed --force
 
       - name: Build Assets
         run: npm run build
