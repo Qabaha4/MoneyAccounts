@@ -33,24 +33,26 @@ jobs:
           npm install
           npm run build
 
-      - name: Deploy to Hostinger via SSH
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          port: ${{ secrets.PORT }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: |
-            app
-            bootstrap
-            config
-            database
-            public
-            resources
-            routes
-            storage
-            artisan
-            composer.json
-            composer.lock
-            vendor
-          target: /home/${{ secrets.USERNAME }}/domains/${{ secrets.DEPLOY_PATH }}
+      # - name: Deploy to Hostinger via SSH
+      #   uses: appleboy/scp-action@v0.1.7
+      #   with:
+      #     host: ${{ secrets.HOST }}
+      #     username: ${{ secrets.USERNAME }}
+      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
+      #     port: ${{ secrets.PORT }}
+      #     source: "dist/*"
+      #     target: /home/${{ secrets.USERNAME }}/domains/${{ secrets.DEPLOY_PATH }}
+
+      - name: Deploy to Hostinger
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+        run: |
+          # create a temporary private key file
+          echo "$SSH_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          # sync project files to Hostinger
+          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no -p ${{ secrets.PORT }}" ./ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/${{ secrets.USERNAME }}/domains/${{ secrets.DEPLOY_PATH }}
+
+          # remove the temporary key
+          rm private_key.pem
