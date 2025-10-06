@@ -7,6 +7,7 @@ use App\Models\Account;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
@@ -15,29 +16,103 @@ class TransactionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Transaction::with(['account.currency', 'transferToAccount.currency'])
-            ->whereHas('account', function ($q) {
-                $q->where('user_id', Auth::id());
-            })
-            ->orderBy('transaction_date', 'desc');
+        // Get all user account IDs for incoming transfer detection
+        $userAccountIds = Account::where('user_id', Auth::id())->pluck('id')->toArray();
+
+        // Build base query for outgoing transactions and incoming transfers
+        $baseQuery = Transaction::with(['account.currency', 'transferToAccount.currency'])
+            ->where(function ($q) use ($userAccountIds) {
+                // Outgoing transactions (user's own transactions)
+                $q->whereHas('account', function ($accountQuery) {
+                    $accountQuery->where('user_id', Auth::id());
+                })
+                // Incoming transfers (transfers to user's accounts)
+                ->orWhere(function ($transferQuery) use ($userAccountIds) {
+                    $transferQuery->whereIn('transfer_to_account_id', $userAccountIds)
+                        ->where('type', 'transfer');
+                });
+            });
 
         // Filter by account if specified
         if ($request->filled('account_id')) {
-            $query->where('account_id', $request->account_id);
+            $baseQuery->where(function ($q) use ($request) {
+                $q->where('account_id', $request->account_id)
+                  ->orWhere('transfer_to_account_id', $request->account_id);
+            });
         }
 
         // Filter by type if specified
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            $baseQuery->where('type', $request->type);
         }
 
-        $transactions = $query->paginate(20);
-        $accounts = Account::where('user_id', Auth::id())->get();
+        // Filter by search term if specified
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $baseQuery->where(function ($q) use ($searchTerm) {
+                $q->where('description', 'like', "%{$searchTerm}%")
+                    ->orWhere('amount', 'like', "%{$searchTerm}%")
+                    ->orWhereHas('account', function ($accountQuery) use ($searchTerm) {
+                        $accountQuery->where('name', 'like', "%{$searchTerm}%");
+                    })
+                    ->orWhereHas('transferToAccount', function ($transferAccountQuery) use ($searchTerm) {
+                        $transferAccountQuery->where('name', 'like', "%{$searchTerm}%");
+                    });
+            });
+        }
+
+        // Filter by date range if specified
+        if ($request->filled('date_from')) {
+            $baseQuery->whereDate('transaction_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $baseQuery->whereDate('transaction_date', '<=', $request->date_to);
+        }
+
+        // Apply sorting
+        $sortBy = $request->get('sort_by', 'transaction_date_desc');
+        switch ($sortBy) {
+            case 'transaction_date_asc':
+                $baseQuery->orderBy('transaction_date', 'asc');
+                break;
+            case 'amount_desc':
+                $baseQuery->orderBy('amount', 'desc');
+                break;
+            case 'amount_asc':
+                $baseQuery->orderBy('amount', 'asc');
+                break;
+            case 'type_asc':
+                $baseQuery->orderBy('type', 'asc');
+                break;
+            case 'description_asc':
+                $baseQuery->orderBy('description', 'asc');
+                break;
+            case 'transaction_date_desc':
+            default:
+                $baseQuery->orderBy('transaction_date', 'desc');
+                break;
+        }
+
+        // Get paginated results
+        $transactions = $baseQuery->paginate(20);
+
+        // Add is_incoming_transfer flag to each transaction
+        $transactions->getCollection()->transform(function ($transaction) use ($userAccountIds) {
+            $transaction->is_incoming_transfer = in_array($transaction->transfer_to_account_id, $userAccountIds) 
+                && !in_array($transaction->account_id, $userAccountIds);
+            return $transaction;
+        });
+
+        $accounts = Account::with('currency')
+            ->where('user_id', Auth::id())
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
             'accounts' => $accounts,
-            'filters' => $request->only(['account_id', 'type']),
+            'filters' => $request->only(['account_id', 'type', 'search', 'sort_by', 'date_from', 'date_to']),
         ]);
     }
 
@@ -65,6 +140,9 @@ class TransactionController extends Controller
             'description' => 'nullable|string|max:255',
             'transaction_date' => 'required|date',
             'transfer_to_account_id' => 'nullable|exists:accounts,id|different:account_id',
+            'exchange_rate' => 'nullable|numeric|min:0.000001',
+            'converted_amount' => 'nullable|numeric|min:0.01',
+            'exchange_rate_source' => 'nullable|string|in:manual,api',
         ]);
 
         // Verify account ownership
@@ -77,10 +155,44 @@ class TransactionController extends Controller
             Account::where('id', $validated['transfer_to_account_id'])
                 ->where('user_id', Auth::id())
                 ->firstOrFail();
+            
+            // Check if this is a cross-currency transfer
+            $sourceAccount = Account::with('currency')->find($validated['account_id']);
+            $destinationAccount = Account::with('currency')->find($validated['transfer_to_account_id']);
+            
+            if ($sourceAccount->currency_id !== $destinationAccount->currency_id) {
+                // Cross-currency transfer requires exchange rate and converted amount
+                if (!$validated['exchange_rate'] || !$validated['converted_amount']) {
+                    return back()->withErrors([
+                        'exchange_rate' => 'Exchange rate is required for cross-currency transfers.',
+                        'converted_amount' => 'Converted amount is required for cross-currency transfers.'
+                    ]);
+                }
+            }
         }
 
-        Transaction::create($validated);
+        // Parse ISO string from frontend (user's timezone) and convert to UTC for storage
+        $validated['transaction_date'] = Carbon::parse($validated['transaction_date'])
+            // ->utc()
+            ->format('Y-m-d H:i:s');
 
+
+        $transaction = Transaction::create($validated);
+
+        // Return Inertia response for Inertia.js requests (from modal)
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Transaction created successfully.');
+        }
+
+        // Return JSON response for other AJAX requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Transaction created successfully.',
+                'transaction' => $transaction->load(['account.currency', 'transferToAccount.currency'])
+            ]);
+        }
+
+        // Fallback redirect for non-AJAX requests
         return redirect()->route('transactions.index')
             ->with('success', 'Transaction created successfully.');
     }
@@ -138,6 +250,9 @@ class TransactionController extends Controller
             'description' => 'nullable|string|max:255',
             'transaction_date' => 'required|date',
             'transfer_to_account_id' => 'nullable|exists:accounts,id|different:account_id',
+            'exchange_rate' => 'nullable|numeric|min:0.000001',
+            'converted_amount' => 'nullable|numeric|min:0.01',
+            'exchange_rate_source' => 'nullable|string|in:manual,api',
         ]);
 
         // Verify new account ownership
@@ -150,10 +265,43 @@ class TransactionController extends Controller
             Account::where('id', $validated['transfer_to_account_id'])
                 ->where('user_id', Auth::id())
                 ->firstOrFail();
+            
+            // Check if this is a cross-currency transfer
+            $sourceAccount = Account::with('currency')->find($validated['account_id']);
+            $destinationAccount = Account::with('currency')->find($validated['transfer_to_account_id']);
+            
+            if ($sourceAccount->currency_id !== $destinationAccount->currency_id) {
+                // Cross-currency transfer requires exchange rate and converted amount
+                if (!$validated['exchange_rate'] || !$validated['converted_amount']) {
+                    return back()->withErrors([
+                        'exchange_rate' => 'Exchange rate is required for cross-currency transfers.',
+                        'converted_amount' => 'Converted amount is required for cross-currency transfers.'
+                    ]);
+                }
+            }
         }
+
+        // Parse ISO string from frontend (user's timezone) and convert to UTC for storage
+        $validated['transaction_date'] = Carbon::parse($validated['transaction_date'])
+            // ->utc()
+            ->format('Y-m-d H:i:s');
 
         $transaction->update($validated);
 
+        // Return Inertia response for Inertia.js requests (from modal)
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Transaction updated successfully.');
+        }
+
+        // Return JSON response for other AJAX requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Transaction updated successfully.',
+                'transaction' => $transaction->load(['account.currency', 'transferToAccount.currency'])
+            ]);
+        }
+
+        // Fallback redirect for non-AJAX requests
         return redirect()->route('transactions.index')
             ->with('success', 'Transaction updated successfully.');
     }
@@ -169,6 +317,19 @@ class TransactionController extends Controller
         }
 
         $transaction->delete();
+
+        // Return Inertia response for Inertia.js requests
+        if (request()->header('X-Inertia')) {
+            return back()->with('success', 'Transaction deleted successfully.');
+        }
+
+        // Return JSON response for other AJAX requests
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaction deleted successfully.'
+            ]);
+        }
 
         return redirect()->route('transactions.index')
             ->with('success', 'Transaction deleted successfully.');

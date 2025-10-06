@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\Currency;
+use App\Http\Requests\AccountRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AccountController extends Controller
 {
@@ -20,8 +22,11 @@ class AccountController extends Controller
             ->orderBy('name')
             ->get();
 
+        $currencies = Currency::orderBy('code')->get();
+
         return Inertia::render('Accounts/Index', [
             'accounts' => $accounts,
+            'currencies' => $currencies,
         ]);
     }
 
@@ -40,23 +45,13 @@ class AccountController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(AccountRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'currency_id' => 'required|exists:currencies,id',
-            'type' => 'required|in:checking,savings,credit,investment,cash,other',
-            'initial_balance' => 'nullable|numeric|min:0',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->getValidatedDataForCreation();
 
-        $validated['user_id'] = Auth::id();
-        $validated['balance'] = $validated['initial_balance'] ?? 0;
+        $account = Account::create($validated);
 
-        Account::create($validated);
-
-        return redirect()->route('accounts.index')
-            ->with('success', 'Account created successfully.');
+        return Inertia::location(route('accounts.index'));
     }
 
     /**
@@ -69,14 +64,47 @@ class AccountController extends Controller
             abort(403);
         }
 
-        $account->load(['currency', 'transactions' => function ($query) {
-            $query->with('transferToAccount')
-                  ->orderBy('transaction_date', 'desc')
-                  ->limit(10);
-        }]);
+        // Load account with currency
+        $account->load('currency');
+
+        // Get all transactions related to this account (both outgoing and incoming transfers)
+        $outgoingTransactions = $account->transactions()
+            ->with(['account.currency', 'transferToAccount.currency'])
+            ->get();
+
+        $incomingTransfers = \App\Models\Transaction::where('transfer_to_account_id', $account->id)
+            ->where('user_id', Auth::id())
+            ->with(['account.currency', 'transferToAccount.currency'])
+            ->get();
+
+        // Combine and sort all transactions
+        $allTransactions = $outgoingTransactions->concat($incomingTransfers)
+            ->sortByDesc('transaction_date')
+            ->take(10)
+            ->values();
+
+        // Add a flag to distinguish incoming transfers for UI purposes
+        $allTransactions = $allTransactions->map(function ($transaction) use ($account) {
+            $transaction->is_incoming_transfer = $transaction->transfer_to_account_id == $account->id;
+            return $transaction;
+        });
+
+        // Manually set the transactions relationship
+        $account->setRelation('transactions', $allTransactions);
+
+        // Get all user accounts for the transaction modal
+        $accounts = Account::with('currency')
+            ->where('user_id', Auth::id())
+            ->orderBy('name')
+            ->get();
+
+        // Get currencies for the account edit modal
+        $currencies = Currency::orderBy('code')->get();
 
         return Inertia::render('Accounts/Show', [
             'account' => $account,
+            'accounts' => $accounts,
+            'currencies' => $currencies,
         ]);
     }
 
@@ -96,18 +124,20 @@ class AccountController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Account $account)
+    public function update(AccountRequest $request, Account $account)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'currency_id' => 'required|exists:currencies,id',
-            'type' => 'required|in:checking,savings,credit,investment,cash,other',
-            'is_active' => 'boolean',
-        ]);
+        // Check if the account belongs to the authenticated user
+        if ($account->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
 
-        $account->update($validated);
+        $validatedData = $request->getValidatedDataForUpdate();
 
-        return redirect()->route('accounts.index')
+
+
+        $account->update($validatedData);
+
+        return redirect()->back()
             ->with('success', 'Account updated successfully.');
     }
 

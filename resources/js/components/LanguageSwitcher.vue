@@ -11,14 +11,14 @@
                 @click="setLocale('en')"
                 :class="{ 'bg-accent': currentLocale === 'en' }"
             >
-                <span class="mr-2">🇺🇸</span>
+                <span class="me-2">🇺🇸</span>
                 English
             </DropdownMenuItem>
             <DropdownMenuItem 
                 @click="setLocale('ar')"
                 :class="{ 'bg-accent': currentLocale === 'ar' }"
             >
-                <span class="mr-2">🇸🇦</span>
+                <span class="me-2">🇸🇦</span>
                 العربية
             </DropdownMenuItem>
         </DropdownMenuContent>

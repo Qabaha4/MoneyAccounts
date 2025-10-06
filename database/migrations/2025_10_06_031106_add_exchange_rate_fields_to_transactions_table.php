@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            $table->string('description')->nullable()->change();
+            $table->decimal('exchange_rate', 15, 6)->nullable()->after('transfer_to_account_id');
+            $table->decimal('converted_amount', 15, 4)->nullable()->after('exchange_rate');
+            $table->string('exchange_rate_source')->nullable()->after('converted_amount')->comment('manual, api, etc.');
         });
     }
 
@@ -22,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            $table->string('description')->nullable(false)->change();
+            $table->dropColumn(['exchange_rate', 'converted_amount', 'exchange_rate_source']);
         });
     }
 };

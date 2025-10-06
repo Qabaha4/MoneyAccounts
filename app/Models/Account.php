@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class Account extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'user_id',
         'currency_id',
@@ -99,9 +101,14 @@ class Account extends Model
             END) as total')
             ->value('total') ?? 0;
 
+        // For incoming transfers, use converted_amount if it's a cross-currency transfer
         $transferInSum = $this->transferTransactions()
             ->where('type', 'transfer')
-            ->sum('amount') ?? 0;
+            ->selectRaw('SUM(CASE 
+                WHEN converted_amount IS NOT NULL THEN converted_amount 
+                ELSE amount 
+            END) as total')
+            ->value('total') ?? 0;
 
         $this->update([
             'balance' => $this->initial_balance + $transactionSum + $transferInSum

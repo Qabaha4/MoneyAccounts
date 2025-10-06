@@ -94,7 +94,7 @@ const rightNavItems: NavItem[] = [
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                class="mr-2 h-9 w-9"
+                                class="me-2 h-9 w-9"
                             >
                                 <Menu class="h-5 w-5" />
                             </Button>
@@ -155,7 +155,7 @@ const rightNavItems: NavItem[] = [
 
                 <!-- Desktop Menu -->
                 <div class="hidden h-full lg:flex lg:flex-1">
-                    <NavigationMenu class="ml-10 flex h-full items-stretch">
+                    <NavigationMenu class="ms-10 flex h-full items-stretch">
                         <NavigationMenuList
                             class="flex h-full items-stretch space-x-2"
                         >
@@ -175,7 +175,7 @@ const rightNavItems: NavItem[] = [
                                     <component
                                         v-if="item.icon"
                                         :is="item.icon"
-                                        class="mr-2 h-4 w-4"
+                                        class="me-2 h-4 w-4"
                                     />
                                     {{ item.title }}
                                 </Link>
@@ -188,7 +188,7 @@ const rightNavItems: NavItem[] = [
                     </NavigationMenu>
                 </div>
 
-                <div class="ml-auto flex items-center space-x-2">
+                <div class="ms-auto flex items-center space-x-2">
                     <div class="relative flex items-center space-x-1">
                         <Button
                             variant="ghost"

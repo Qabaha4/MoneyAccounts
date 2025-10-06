@@ -72,7 +72,7 @@ import { Head, Link } from '@inertiajs/vue3';
                                 <a
                                     href="https://laravel.com/docs"
                                     target="_blank"
-                                    class="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
+                                    class="ms-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
                                 >
                                     <span>Documentation</span>
                                     <svg
@@ -111,7 +111,7 @@ import { Head, Link } from '@inertiajs/vue3';
                                 <a
                                     href="https://laracasts.com"
                                     target="_blank"
-                                    class="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
+                                    class="ms-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
                                 >
                                     <span>Laracasts</span>
                                     <svg
@@ -145,7 +145,7 @@ import { Head, Link } from '@inertiajs/vue3';
                     </ul>
                 </div>
                 <div
-                    class="relative -mb-px aspect-335/376 w-full shrink-0 overflow-hidden rounded-t-lg bg-[#fff2f2] lg:mb-0 lg:-ml-px lg:aspect-auto lg:w-[438px] lg:rounded-t-none lg:rounded-r-lg dark:bg-[#1D0002]"
+                    class="relative -mb-px aspect-335/376 w-full shrink-0 overflow-hidden rounded-t-lg bg-[#fff2f2] lg:mb-0 lg:-ms-px lg:aspect-auto lg:w-[438px] lg:rounded-t-none lg:rounded-r-lg dark:bg-[#1D0002]"
                 >
                     <svg
                         class="w-full max-w-none translate-y-0 text-[#F53003] opacity-100 transition-all duration-750 dark:text-[#F61500] starting:translate-y-6 starting:opacity-0"
@@ -183,7 +183,7 @@ import { Head, Link } from '@inertiajs/vue3';
                         />
                     </svg>
                     <svg
-                        class="relative -mt-[4.9rem] -ml-8 w-[448px] max-w-none lg:-mt-[6.6rem] lg:ml-0 dark:hidden"
+                        class="relative -mt-[4.9rem] -ms-8 w-[448px] max-w-none lg:-mt-[6.6rem] lg:ms-0 dark:hidden"
                         viewBox="0 0 440 376"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
@@ -507,7 +507,7 @@ import { Head, Link } from '@inertiajs/vue3';
                         </g>
                     </svg>
                     <svg
-                        class="relative -mt-[4.9rem] -ml-8 hidden w-[448px] max-w-none lg:-mt-[6.6rem] lg:ml-0 dark:block"
+                        class="relative -mt-[4.9rem] -ms-8 hidden w-[448px] max-w-none lg:-mt-[6.6rem] lg:ms-0 dark:block"
                         viewBox="0 0 440 376"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"

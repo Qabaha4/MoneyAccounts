@@ -1,109 +1,184 @@
 <template>
-  <AppLayout :title="t('accounts.title')">
+  <AppLayout title="Accounts">
     <template #header>
-      <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-        {{ t('accounts.title') }}
-      </h2>
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+          {{ t('accounts.title') }}
+        </h2>
+        <Button
+          @click="openCreateModal"
+          class="inline-flex items-center w-full sm:w-auto justify-center"
+        >
+          <PlusIcon class="w-4 h-4 me-2" />
+          {{ t('accounts.create') }}
+        </Button>
+      </div>
     </template>
 
-    <div class="py-12">
-      <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-          <div class="p-6 text-gray-900 dark:text-gray-100">
-            <!-- Header with Create Button -->
-            <div class="flex justify-between items-center mb-6">
-              <h3 class="text-lg font-medium">{{ t('accounts.title') }}</h3>
-              <Button as-child>
-                <Link :href="accountRoutes.create().url" class="inline-flex items-center">
-                  <Plus class="w-4 h-4 mr-2" />
-                  {{ t('accounts.create_account') }}
-                </Link>
+    <div class="py-4 sm:py-6 lg:py-8 h-screen overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+        <div class="bg-white dark:bg-black/90 overflow-hidden shadow-sm sm:rounded-lg border dark:border-gray-800 h-full flex flex-col">
+          <div class="p-4 sm:p-6 text-gray-900 dark:text-gray-100 flex-shrink-0">
+            <!-- Compact Header with Create Button -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+              <h3 class="text-base font-medium">{{ t('accounts.title') }}</h3>
+              <Button @click="openCreateModal" class="inline-flex items-center w-full sm:w-auto justify-center text-sm h-8">
+                <PlusIcon class="w-3 h-3 me-2" />
+                {{ t('accounts.create_account') }}
               </Button>
             </div>
+          </div>
 
+          <!-- Scrollable Accounts Container -->
+          <div class="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6">
+            <!-- Loading State -->
+            <div v-if="isLoading || isRefreshing">
+              <AccountSkeleton :count="6" />
+            </div>
+            
             <!-- Accounts Grid -->
-            <div v-if="accounts.length > 0" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <Card v-for="account in accounts" :key="account.id" class="hover:shadow-lg transition-shadow">
-                <CardHeader class="pb-3">
-                  <div class="flex items-center justify-between">
-                    <CardTitle class="text-lg">{{ account.name }}</CardTitle>
-                    <Badge :variant="account.is_active ? 'default' : 'secondary'">
-                      {{ account.is_active ? 'Active' : 'Inactive' }}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                      <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('accounts.balance') }}</span>
-                      <span class="text-lg font-semibold" :class="account.balance >= 0 ? 'text-green-600' : 'text-red-600'">
-                        {{ account.currency.symbol }}{{ Number(account.balance).toLocaleString() }}
+            <div v-else-if="accounts.length > 0" class="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-max">
+              <Card 
+                v-for="account in accounts" 
+                :key="account.id" 
+                class="overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group h-fit max-h-[350px] flex flex-col cursor-pointer"
+                @click="$inertia.visit(accountRoutes.show(account.id).url)"
+              >
+                <!-- Header with Type and Currency -->
+                <div class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-3 py-1.5 flex-shrink-0">
+                  <div class="absolute inset-0 bg-grid-white/[0.02] bg-[size:12px_12px]"></div>
+                  
+                  <div class="relative flex items-center justify-between">
+                    <!-- Account Type -->
+                    <div class="flex items-center gap-1 text-slate-300">
+                      <Wallet class="w-3 h-3 flex-shrink-0" />
+                      <span class="text-xs capitalize truncate">
+                        {{ account.type || 'General' }}
                       </span>
                     </div>
-                    <div class="flex items-center justify-between">
-                      <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('accounts.currency') }}</span>
-                      <span class="text-sm">{{ account.currency.code }}</span>
+
+                    <!-- Currency and Edit Button -->
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                      <div class="text-xs text-slate-400 font-mono">
+                        {{ account.currency.symbol }}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        @click.stop="openEditModal(account)"
+                        class="h-6 w-6 p-0 text-slate-300 hover:text-white hover:bg-white/10"
+                      >
+                        <Edit class="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
-                </CardContent>
-                <CardFooter class="pt-3">
-                  <div class="flex gap-2 w-full">
-                    <Button variant="outline" size="sm" as-child class="flex-1">
-                      <Link :href="accountRoutes.show(account.id).url">
-                        <Eye class="w-4 h-4 mr-1" />
-                        {{ t('accounts.view') }}
-                      </Link>
-                    </Button>
-                    <Button variant="outline" size="sm" as-child class="flex-1">
-                      <Link :href="accountRoutes.edit(account.id).url">
-                        <Edit class="w-4 h-4 mr-1" />
-                        {{ t('accounts.edit') }}
-                      </Link>
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      @click="deleteAccount(account)"
-                      class="flex-1"
-                    >
-                      <Trash2 class="w-4 h-4 mr-1" />
-                      {{ t('accounts.delete') }}
-                    </Button>
+                </div>
+
+                <!-- Body with Account Name and Balance -->
+                <div class="px-3 py-4 flex-1 flex flex-col justify-center">
+                  <!-- Account Name and Balance on Same Line -->
+                  <div class="flex items-center justify-between gap-4">
+                    <!-- Account Name -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-1">
+                        <div class="w-0.5 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          Account Name
+                        </span>
+                      </div>
+                      <div class="pl-2 flex items-center">
+                        <div class="flex items-center gap-2 min-w-0 flex-1">
+                          <div class="w-5 h-5 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center flex-shrink-0">
+                            <span class="text-xs font-bold text-white">A</span>
+                          </div>
+                          <div class="min-w-0 flex-1">
+                            <div class="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                              {{ account.name }}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Balance -->
+                    <div class="flex-shrink-0">
+                      <div class="flex items-center gap-2 mb-1 justify-end">
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          Balance
+                        </span>
+                        <div class="w-0.5 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
+                      </div>
+                      <div class="pe-2 flex items-center justify-end">
+                        <div class="flex items-center gap-2">
+                          <div class="min-w-0">
+                            <div 
+                              class="text-sm font-semibold text-right"
+                              :class="{
+                                'text-emerald-600 dark:text-emerald-400': account.balance >= 0,
+                                'text-red-600 dark:text-red-400': account.balance < 0
+                              }"
+                            >
+                              {{ account.balance < 0 ? '-' : '' }}{{ account.currency.symbol }}{{ Number(Math.abs(account.balance)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                            </div>
+                            <!-- <div class="text-xs text-slate-500 dark:text-slate-400 text-right">
+                              {{ account.currency.code }}
+                            </div> -->
+                          </div>
+                          <div class="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                            <span class="text-xs font-bold text-white">{{ account.currency.symbol }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </CardFooter>
+                </div>
+
+                
               </Card>
             </div>
 
             <!-- Empty State -->
-            <div v-else class="text-center py-12">
-              <div class="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                <Wallet class="w-12 h-12 text-gray-400" />
-              </div>
-              <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">{{ t('dashboard.no_accounts') }}</h3>
-              <p class="text-gray-600 dark:text-gray-400 mb-6">Get started by creating your first account.</p>
-              <Button as-child>
-                <Link :href="accountRoutes.create().url">
-                  <Plus class="w-4 h-4 mr-2" />
+            <div v-else-if="!isLoading && !isRefreshing" class="flex items-center justify-center h-full">
+              <div class="text-center py-8 px-4">
+                <div class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 dark:bg-gray-800/80 rounded-full flex items-center justify-center mb-4 dark:border dark:border-gray-700">
+                  <Wallet class="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">{{ t('dashboard.no_accounts') }}</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto text-sm">Get started by creating your first account.</p>
+                <Button @click="openCreateModal" class="w-full sm:w-auto">
+                  <PlusIcon class="w-4 h-4 me-2" />
                   {{ t('accounts.create_account') }}
-                </Link>
-              </Button>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Account Form Modal -->
+     <AccountFormModal
+       v-model:open="isModalOpen"
+       :account="editingAccount"
+       :currencies="props.currencies"
+       @success="handleModalSuccess"
+     />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Eye, Edit, Trash2, Wallet } from 'lucide-vue-next'
+import { Plus as PlusIcon, Eye, Edit, Wallet } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import accountRoutes from '@/routes/accounts'
+import AccountFormModal from '@/components/AccountFormModal.vue'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import AccountSkeleton from '@/components/AccountSkeleton.vue'
 
 const { t } = useI18n()
 
@@ -120,18 +195,50 @@ interface Account {
   balance: number
   initial_balance: number
   is_active: boolean
+  type: string
+  currency_id: number
   currency: Currency
   created_at: string
   updated_at: string
 }
 
-defineProps<{
+const props = defineProps<{
   accounts: Account[]
+  currencies: Currency[]
 }>()
 
-const deleteAccount = (account: Account) => {
-  if (confirm(t('common.confirm_delete', { name: account.name }))) {
-    router.delete(accountRoutes.destroy(account.id).url)
-  }
+// Modal state
+const isModalOpen = ref(false)
+const editingAccount = ref<Account | null>(null)
+
+// Loading states
+const isLoading = ref(false)
+const isRefreshing = ref(false)
+
+const openCreateModal = () => {
+  editingAccount.value = null
+  isModalOpen.value = true
+}
+
+const openEditModal = (account: Account) => {
+  editingAccount.value = account
+  isModalOpen.value = true
+}
+
+const handleModalSuccess = () => {
+  // Refresh the page to show updated data
+  isRefreshing.value = true
+  router.reload({
+    onFinish: () => {
+      isRefreshing.value = false
+    }
+  })
 }
 </script>
+
+<style scoped>
+.bg-grid-white\/\[0\.02\] {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+</style>

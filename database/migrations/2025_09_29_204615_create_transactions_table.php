@@ -17,11 +17,11 @@ return new class extends Migration
             $table->foreignId('account_id')->constrained()->onDelete('cascade');
             $table->enum('type', ['income', 'expense', 'transfer']);
             $table->decimal('amount', 15, 4); // Positive for income, negative for expense
-            $table->string('description');
+            $table->string('description')->nullable();
             $table->text('notes')->nullable();
             $table->string('category')->nullable();
             $table->string('reference_number')->nullable();
-            $table->date('transaction_date');
+            $table->datetime('transaction_date');
             $table->foreignId('transfer_to_account_id')->nullable()->constrained('accounts')->onDelete('set null'); // For transfers
             $table->timestamps();
             

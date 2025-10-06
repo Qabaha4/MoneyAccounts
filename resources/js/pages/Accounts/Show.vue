@@ -1,5 +1,5 @@
 <template>
-  <AppLayout :title="`${t('accounts.title')}: ${account.name}`">
+  <AppLayout :breadcrumbs="breadcrumbs">
     <template #header>
       <!-- Error Alert -->
       <Alert v-if="error" variant="destructive" class="mb-6">
@@ -7,248 +7,220 @@
         <AlertDescription>{{ error }}</AlertDescription>
       </Alert>
 
-      <div class="flex items-center justify-between">
-        <div v-if="isLoading">
+      <div class="flex items-center justify-between gap-2 py-0.5">
+        <div v-if="loading">
           <Skeleton class="h-8 w-48" />
         </div>
-        <h2 v-else class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+        <h2 v-else class="font-semibold text-base sm:text-lg text-gray-900 dark:text-gray-100 truncate">
           {{ account.name }}
         </h2>
-        <div class="flex items-center space-x-2">
-          <Badge :variant="account.is_active ? 'default' : 'secondary'">
+        <div class="flex items-center gap-1">
+          <Badge :variant="account.is_active ? 'default' : 'secondary'" class="px-2 py-0.5 text-xs">
             {{ account.is_active ? t('accounts.active') : t('accounts.inactive') }}
           </Badge>
-          <Button variant="outline" size="sm" as-child>
-            <Link :href="accounts.edit({ account: account.id }).url">
-              <Edit class="w-4 h-4 mr-1" />
-              {{ t('accounts.edit') }}
-            </Link>
-          </Button>
-          <Button variant="destructive" size="sm" @click="confirmDelete" :disabled="isLoading">
-            <Trash class="w-4 h-4 mr-1" />
-            {{ t('accounts.delete') }}
+          <Button size="sm" variant="ghost" @click="openAccountEditModal" class="h-7 w-7 p-0 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+            <Edit class="w-4 h-4" />
           </Button>
         </div>
       </div>
     </template>
 
-    <div class="py-12">
-      <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
-        <!-- Account Summary -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Main Account Info -->
-          <Card class="lg:col-span-2">
-            <CardHeader>
-              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <CardTitle>
-                  <div v-if="isLoading">
-                    <Skeleton class="h-7 w-48" />
-                  </div>
-                  <span v-else>{{ t('accounts.account_summary') }}</span>
-                </CardTitle>
-                <div v-if="isLoading">
-                  <Skeleton class="h-9 w-20" />
-                </div>
-                <Button v-else variant="outline" size="sm" as-child>
-                  <Link :href="accounts.edit({ account: account.id }).url">
-                    <Edit class="w-4 h-4 mr-1" />
-                    {{ t('accounts.edit') }}
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div v-if="isLoading" class="space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <Skeleton class="h-5 w-32" />
-                  <Skeleton class="h-8 w-24" />
-                </div>
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <Skeleton class="h-5 w-28" />
-                  <Skeleton class="h-6 w-16" />
-                </div>
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <Skeleton class="h-5 w-24" />
-                  <Skeleton class="h-6 w-20" />
-                </div>
-              </div>
-              <div v-else class="space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <span class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('accounts.current_balance') }}</span>
-                  <span class="text-2xl font-bold" :class="account.balance >= 0 ? 'text-green-600' : 'text-red-600'">
-                    {{ account.currency.symbol }}{{ Number(account.balance).toLocaleString() }}
-                  </span>
-                </div>
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <span class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('accounts.currency') }}</span>
-                  <span class="text-sm text-gray-900 dark:text-gray-100">{{ account.currency.code }} - {{ account.currency.name }}</span>
-                </div>
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <span class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('accounts.initial_balance') }}</span>
-                  <span class="text-sm text-gray-900 dark:text-gray-100">
-                    {{ account.currency.symbol }}{{ Number(account.initial_balance).toLocaleString() }}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+    <div class="py-4 sm:py-6">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <!-- Hero Section -->
+        <HeroSection 
+          :main-sec-val="`${Number(totalBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${account.currency.symbol}`"
+          :main-sec-label="'Total Balance'"
+          :sub-sec-p1-val="account.name"
+          :sub-sec-p1-label="'Account Name'"
+          :sub-sec-p2-val="`${monthlyTransactionsCount}`"
+          :sub-sec-p2-label="'Transactions This Month'"
+          :sub-sec-p3-val="recentTransactionsForHero.length.toString()"
+          :sub-sec-p3-label="'Recent Activity'"
+          :show-status="true"
+          :status-val="account.is_active ? 'Active' : 'Inactive'"
+          :show-edit-button="true"
+          @edit="openAccountEditModal"
+        />
 
-          <!-- Account Description -->
-          <Card>
-            <CardHeader>
-              <CardTitle class="text-lg">
-                <div v-if="isLoading">
-                  <Skeleton class="h-6 w-24" />
+        <!-- Account Description (if exists) -->
+        <Card v-if="account.description" class="border-l-4 border-l-blue-500">
+          <CardContent class="p-4 sm:p-6">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                <Receipt class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                  {{ t('accounts.description') }}
                 </div>
-                <span v-else>{{ t('accounts.description') }}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div v-if="isLoading">
-                <Skeleton class="h-16 w-full" />
+                <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {{ account.description }}
+                </p>
               </div>
-              <div v-else-if="account.description" class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                {{ account.description }}
-              </div>
-              <div v-else class="text-sm text-gray-500 dark:text-gray-400 italic">
-                {{ t('transactions.no_description') }}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <!-- Recent Transactions -->
         <Card>
-          <CardHeader>
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <CardTitle>
-                <div v-if="isLoading">
-                  <Skeleton class="h-6 w-40" />
-                </div>
-                <span v-else>{{ t('transactions.recent_transactions') }}</span>
-              </CardTitle>
-              <div class="flex flex-col sm:flex-row gap-2">
-                <div v-if="isLoading">
-                  <Skeleton class="h-9 w-24" />
-                </div>
-                <Button v-else size="sm" as-child>
-                  <Link :href="transactions.create().url + `?account_id=${account.id}`">
-                    <Plus class="w-4 h-4 mr-1" />
-                    {{ t('transactions.add_transaction') }}
-                  </Link>
+          <CardContent class="p-4 sm:p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {{ t('transactions.recent_transactions') }}
+              </h3>
+              <div class="flex items-center gap-2">
+                <Button variant="ghost" size="sm" @click="showAllTransactions" class="h-8" title="View all transactions">
+                  <Receipt class="w-4 h-4" />
                 </Button>
-                <div v-if="isLoading">
-                  <Skeleton class="h-9 w-24" />
-                </div>
-                <Button v-else variant="outline" size="sm" as-child>
-                  <Link :href="transactions.index().url + `?account_id=${account.id}`">
-                    {{ t('transactions.view_all') }}
-                  </Link>
+                <Button variant="ghost" size="sm" @click="openCreateModal" class="h-8">
+                  <Plus class="w-4 h-4" />
                 </Button>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div v-if="isLoading" class="space-y-4">
-              <div v-for="i in 3" :key="i" class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-3">
-                <div class="flex items-center space-x-3 flex-1">
-                  <Skeleton class="h-8 w-8 rounded-full" />
-                  <div class="space-y-2 flex-1">
-                    <Skeleton class="h-4 w-32" />
-                    <Skeleton class="h-3 w-24" />
-                  </div>
+
+            <div v-if="loading" class="space-y-3">
+              <div v-for="i in 3" :key="i" class="flex items-center gap-3 p-3 border rounded-xl">
+                <Skeleton class="h-12 w-12 rounded-xl" />
+                <div class="flex-1 space-y-2">
+                  <Skeleton class="h-4 w-32" />
+                  <Skeleton class="h-3 w-24" />
                 </div>
-                <div class="text-right space-y-2">
-                  <Skeleton class="h-5 w-20" />
-                  <Skeleton class="h-4 w-16" />
-                </div>
+                <Skeleton class="h-5 w-20" />
               </div>
             </div>
-            <div v-else-if="account.transactions && account.transactions.length > 0" class="space-y-4">
+
+            <div v-else-if="account.transactions && account.transactions.length > 0" class="space-y-2">
               <div 
                 v-for="transaction in account.transactions" 
                 :key="transaction.id"
-                class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors gap-3"
+                class="group flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer border-l-4"
+                :class="{
+                  'border-l-emerald-500': transaction.type === 'income',
+                  'border-l-rose-500': transaction.type === 'expense',
+                  'border-l-blue-500': transaction.type === 'transfer'
+                }"
+                @click="openEditModal(transaction)"
               >
-                <div class="flex items-center space-x-3 flex-1">
-                  <div 
-                    class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
-                    :class="getTransactionVariant(transaction.type) === 'default' ? 'bg-green-500' : getTransactionVariant(transaction.type) === 'destructive' ? 'bg-red-500' : getTransactionVariant(transaction.type) === 'secondary' ? 'bg-blue-500' : 'bg-gray-500'"
+                <!-- Icon -->
+                <div 
+                  class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  :class="{
+                    'bg-emerald-100 dark:bg-emerald-900/30': transaction.type === 'income',
+                    'bg-rose-100 dark:bg-rose-900/30': transaction.type === 'expense',
+                    'bg-blue-100 dark:bg-blue-900/30': transaction.type === 'transfer'
+                  }"
+                >
+                  <span 
+                    class="text-lg font-bold"
+                    :class="{
+                      'text-emerald-600 dark:text-emerald-400': transaction.type === 'income',
+                      'text-rose-600 dark:text-rose-400': transaction.type === 'expense',
+                      'text-blue-600 dark:text-blue-400': transaction.type === 'transfer'
+                    }"
                   >
                     {{ getAmountPrefix(transaction.type) }}
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="font-medium text-gray-900 dark:text-gray-100 truncate">
-                      {{ transaction.description || t('transactions.no_description') }}
-                    </p>
-                    <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ formatDate(transaction.transaction_date) }}
-                      </p>
-                      <span v-if="transaction.type === 'transfer' && transaction.transfer_to_account" class="text-sm text-gray-600 dark:text-gray-400">
-                        <span class="hidden sm:inline">•</span>
-                        <span class="sm:ml-1">→ {{ transaction.transfer_to_account.name }}</span>
-                      </span>
-                    </div>
+                  </span>
+                </div>
+
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate mb-1">
+                    {{ transaction.description || t('transactions.no_description') }}
+                  </h4>
+                  <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span>{{ formatDate(transaction.transaction_date) }}</span>
+                    <span v-if="transaction.type === 'transfer'">
+                      <template v-if="transaction.is_incoming_transfer">
+                        ← from 
+                        <button 
+                          @click.stop="navigateToAccount(transaction.account.id)"
+                          class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium"
+                        >
+                          {{ transaction.account.name }}
+                        </button>
+                      </template>
+                      <template v-else-if="transaction.transfer_to_account">
+                         → to 
+                         <button 
+                           @click.stop="navigateToAccount(transaction.transfer_to_account.id)"
+                           class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium"
+                         >
+                           {{ transaction.transfer_to_account.name }}
+                         </button>
+                       </template>
+                    </span>
                   </div>
                 </div>
-                <div class="text-right sm:text-right flex-shrink-0">
-                  <p 
-                    class="font-semibold text-lg"
-                    :class="getAmountColor(transaction.type)"
+
+                <!-- Amount -->
+                <div class="text-right flex items-center gap-2">
+                  <div>
+                    <div 
+                      class="text-base sm:text-lg font-bold"
+                      :class="getAmountColor(transaction.type, transaction.is_incoming_transfer)"
+                    >
+                      {{ getAmountPrefix(transaction.type, transaction.is_incoming_transfer) }}{{ account.currency.symbol }}{{ getEffectiveAmount(transaction).toLocaleString() }}
+                    </div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                      {{ getTransactionLabel(transaction.type, transaction.is_incoming_transfer) }}
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    class="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
                   >
-                    {{ getAmountPrefix(transaction.type) }}{{ account.currency.symbol }}{{ Number(transaction.amount).toLocaleString() }}
-                  </p>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                    {{ t(`transactions.${transaction.type}`) }}
-                  </p>
+                    <Edit class="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </div>
-            <div v-else class="text-center py-8">
-              <div class="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                <Receipt class="w-8 h-8 text-gray-400" />
+
+            <div v-else class="text-center py-12">
+              <div class="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Receipt class="w-8 h-8 text-slate-400" />
               </div>
-              <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">{{ t('transactions.no_transactions') }}</h3>
-              <p class="text-gray-600 dark:text-gray-400 mb-4">{{ t('transactions.start_adding') }}</p>
-              <Button as-child>
-                <Link :href="transactions.create().url + `?account_id=${account.id}`">
-                  <Plus class="w-4 h-4 mr-2" />
-                  {{ t('transactions.add_transaction') }}
-                </Link>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+                {{ t('transactions.no_transactions') }}
+              </h3>
+              <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                {{ t('transactions.start_adding') }}
+              </p>
+              <Button @click="openCreateModal" class="bg-gradient-to-r from-blue-600 to-blue-700">
+                <Plus class="w-4 h-4 me-2" />
+                {{ t('transactions.add_transaction') }}
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <!-- Actions -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Button variant="outline" as-child>
-            <Link :href="accounts.index().url">
-              <ArrowLeft class="w-4 h-4 mr-2" />
-              {{ t('accounts.back_to_accounts') }}
-            </Link>
-          </Button>
-          <div class="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" as-child>
-              <Link :href="transactions.index().url + `?account_id=${account.id}`">
-                {{ t('transactions.view_all') }}
-                <ArrowRight class="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-            <Button variant="destructive" size="sm" @click="confirmDelete" :disabled="isLoading">
-              <Trash class="w-4 h-4 mr-2" />
-              {{ isLoading ? t('accounts.deleting') : t('accounts.delete') }}
-            </Button>
-          </div>
-        </div>
+
       </div>
     </div>
+
+    <!-- Transaction Modal -->
+    <TransactionModal
+      v-model:is-open="isTransactionModalOpen"
+      :accounts="props.accounts"
+      :transaction="editingTransaction"
+      :default-account-id="account.id"
+      :allow-account-change="!!editingTransaction"
+      @success="handleTransactionSuccess"
+    />
+
+    <!-- Account Edit Modal -->
+    <AccountFormModal
+      v-model:open="isAccountModalOpen"
+      :account="props.account"
+      :currencies="props.currencies"
+      @success="handleAccountSuccess"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -258,61 +230,106 @@ import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, Trash, AlertCircle } from 'lucide-vue-next'
+import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, AlertCircle } from 'lucide-vue-next'
 import accounts from '@/routes/accounts'
 import transactions from '@/routes/transactions'
+import TransactionModal from '@/components/TransactionModal.vue'
+import AccountFormModal from '@/components/AccountFormModal.vue'
+import HeroSection from '@/components/HeroSection.vue'
+import { type BreadcrumbItem } from '@/types'
 
 interface Currency {
   id: number
   code: string
   symbol: string
   name: string
+  is_active: boolean
+  decimal_places: number
 }
 
 interface Transaction {
   id: number
-  type: string
-  amount: number
+  type: 'income' | 'expense' | 'transfer'
+  amount: string
   description: string
   transaction_date: string
+  account: Account
   transfer_to_account?: Account
+  is_incoming_transfer?: boolean
+  exchange_rate?: string | null
+  converted_amount?: string | null
+  exchange_rate_source?: string | null
 }
 
 interface Account {
   id: number
   name: string
+  type: string
   balance: number
   initial_balance: number
   is_active: boolean
   currency: Currency
+  currency_id: number
   transactions?: Transaction[]
-  description?: string
+  description: string | null
   created_at: string
   updated_at: string
 }
 
 const props = defineProps<{
   account: Account
+  accounts: Account[]
+  currencies: Currency[]
 }>()
 
 const { t } = useI18n()
 
-// Loading and error states
-const isLoading = ref(false)
-const error = ref<string | null>(null)
+const breadcrumbs: BreadcrumbItem[] = [
+  {
+    title: t('accounts.title'),
+    href: accounts.index().url,
+  },
+  {
+    title: props.account.name,
+    href: accounts.show({ account: props.account.id }).url,
+  },
+]
 
-// Handle potential data loading errors
+const loading = ref(false)
+const error = ref<string | null>(null)
+const isTransactionModalOpen = ref(false)
+const editingTransaction = ref<Transaction | null>(null)
+const isAccountModalOpen = ref(false)
+
+// Computed properties for HeroSection component
+const totalBalance = computed(() => props.account.balance)
+const accountsForHero = computed(() => [props.account])
+const recentTransactionsForHero = computed(() => props.account.transactions?.slice(0, 3) || [])
+
+// Calculate transactions for current month
+const monthlyTransactionsCount = computed(() => {
+  if (!props.account.transactions) return 0
+  
+  const currentDate = new Date()
+  const currentMonth = currentDate.getMonth()
+  const currentYear = currentDate.getFullYear()
+  
+  return props.account.transactions.filter(transaction => {
+    const transactionDate = new Date(transaction.transaction_date)
+    return transactionDate.getMonth() === currentMonth && 
+           transactionDate.getFullYear() === currentYear
+  }).length
+})
+
 const handleError = (errorMessage: string) => {
   error.value = errorMessage
   console.error('Account Show Error:', errorMessage)
 }
 
-// Simulate loading state for dynamic operations
-const setLoading = (loading: boolean) => {
-  isLoading.value = loading
+const setLoading = (loadingState: boolean) => {
+  loading.value = loadingState
 }
 
-// Helper functions for transaction display
 const getTransactionVariant = (type: string) => {
   switch (type) {
     case 'income':
@@ -326,71 +343,65 @@ const getTransactionVariant = (type: string) => {
   }
 }
 
-const getAmountColor = (type: string) => {
+const getAmountColor = (type: string, isIncomingTransfer?: boolean) => {
   switch (type) {
     case 'income':
-      return 'text-green-600 dark:text-green-400'
+      return 'text-emerald-600 dark:text-emerald-400'
     case 'expense':
-      return 'text-red-600 dark:text-red-400'
+      return 'text-rose-600 dark:text-rose-400'
     case 'transfer':
-      return 'text-blue-600 dark:text-blue-400'
+      return isIncomingTransfer 
+        ? 'text-emerald-600 dark:text-emerald-400' 
+        : 'text-blue-600 dark:text-blue-400'
     default:
       return 'text-gray-600 dark:text-gray-400'
   }
 }
 
-const getAmountPrefix = (type: string) => {
+const getAmountPrefix = (type: string, isIncomingTransfer?: boolean) => {
   switch (type) {
     case 'income':
       return '+'
     case 'expense':
       return '-'
     case 'transfer':
-      return '→'
+      return isIncomingTransfer ? '+' : '→'
     default:
       return ''
   }
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString()
-}
-
-const confirmDelete = () => {
-  const confirmMessage = t('accounts.confirm_delete_with_name', { name: props.account.name })
-  
-  if (confirm(confirmMessage)) {
-    setLoading(true)
-    error.value = null
-    
-    router.delete(accounts.destroy({ account: props.account.id }).url, {
-      onSuccess: () => {
-        // Success message will be handled by the backend flash message
-        // Redirect to accounts index after successful deletion
-      },
-      onError: (errors) => {
-        console.error('Delete failed:', errors)
-        
-        // Check if the error is due to existing transactions
-        if (errors.message && errors.message.includes('transactions')) {
-          error.value = t('accounts.delete_error_has_transactions')
-        } else {
-          error.value = t('accounts.delete_error')
-        }
-        
-        setLoading(false)
-      },
-      onFinish: () => {
-        setLoading(false)
-      }
-    })
+const getTransactionLabel = (type: string, isIncomingTransfer?: boolean) => {
+  if (type === 'transfer') {
+    return isIncomingTransfer ? t('transactions.transfer_in') : t('transactions.transfer_out')
   }
+  return t(`transactions.${type}`)
 }
 
-// Add error handling for data validation
+// Get the effective amount for display (converted amount for cross-currency incoming transfers)
+const getEffectiveAmount = (transaction: Transaction) => {
+  if (transaction.type === 'transfer' && transaction.is_incoming_transfer && transaction.converted_amount) {
+    return Number(transaction.converted_amount)
+  }
+  return Number(transaction.amount)
+}
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  const dateStr = date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+  const timeStr = date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+  return `${dateStr} ${timeStr}`
+}
+
 onMounted(() => {
   try {
-    // Validate account data
     if (!props.account) {
       handleError('Account data not found')
       return
@@ -401,10 +412,48 @@ onMounted(() => {
       return
     }
     
-    // Clear any previous errors
     error.value = null
   } catch (err) {
     handleError(err instanceof Error ? err.message : 'Failed to load account data')
   }
 })
+
+const showAllTransactions = () => {
+  router.visit(transactions.index(), {
+    data: { account_id: props.account.id }
+  })
+}
+
+const openCreateModal = () => {
+  editingTransaction.value = null
+  isTransactionModalOpen.value = true
+}
+
+const openEditModal = (transaction: Transaction) => {
+  editingTransaction.value = transaction
+  isTransactionModalOpen.value = true
+}
+
+const handleTransactionSuccess = () => {
+  router.reload({ only: ['account'] })
+}
+
+const openAccountEditModal = () => {
+  isAccountModalOpen.value = true
+}
+
+const handleAccountSuccess = () => {
+  router.reload({ only: ['account'] })
+}
+
+const navigateToAccount = (accountId: number) => {
+  router.visit(accounts.show({ account: accountId }).url)
+}
 </script>
+
+<style scoped>
+.bg-grid-white\/\[0\.02\] {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+</style>

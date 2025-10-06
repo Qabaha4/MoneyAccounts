@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,12 +21,33 @@ class Transaction extends Model
         'reference_number',
         'transaction_date',
         'transfer_to_account_id',
+        'exchange_rate',
+        'converted_amount',
+        'exchange_rate_source',
     ];
 
     protected $casts = [
         'amount' => 'decimal:4',
-        'transaction_date' => 'date',
+        'transaction_date' => 'datetime',
+        'exchange_rate' => 'decimal:6',
+        'converted_amount' => 'decimal:4',
     ];
+
+    /**
+     * Get the transaction date converted to application timezone
+     * Returns ISO string format for frontend compatibility
+     */
+    public function getTransactionDateAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        return Carbon::parse($value, 'UTC') // Parse as UTC (stored format)
+            ->setTimezone(config('app.timezone')) // Convert to app timezone
+            ->toISOString(); // Return as ISO string for frontend
+    }
+
 
     /**
      * Global scope to automatically filter by authenticated user (tenant scoping)
@@ -141,5 +163,44 @@ class Transaction extends Model
     public function scopeTransfer($query)
     {
         return $query->where('type', 'transfer');
+    }
+
+    /**
+     * Check if this is a cross-currency transfer
+     */
+    public function isCrossCurrencyTransfer(): bool
+    {
+        if ($this->type !== 'transfer' || !$this->transfer_to_account_id) {
+            return false;
+        }
+
+        $this->load(['account.currency', 'transferToAccount.currency']);
+        
+        return $this->account->currency_id !== $this->transferToAccount->currency_id;
+    }
+
+    /**
+     * Get the effective amount for the destination account
+     * Returns converted amount if cross-currency, otherwise the original amount
+     */
+    public function getEffectiveAmount(): float
+    {
+        if ($this->isCrossCurrencyTransfer() && $this->converted_amount) {
+            return (float) $this->converted_amount;
+        }
+        
+        return (float) $this->amount;
+    }
+
+    /**
+     * Calculate exchange rate from amount and converted amount
+     */
+    public function calculateExchangeRate(): ?float
+    {
+        if (!$this->converted_amount || !$this->amount) {
+            return null;
+        }
+        
+        return (float) $this->converted_amount / (float) $this->amount;
     }
 }
