@@ -17,11 +17,11 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, bcmath, pdo_mysql
+          extensions: mbstring, bcmath, pdo_mysql, openssl, tokenizer, xml, ctype, json, fileinfo
           tools: composer
 
       - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader
+        run: composer install --no-dev --optimize-autoloader --no-interaction
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -30,29 +30,92 @@ jobs:
 
       - name: Install NPM dependencies and build
         run: |
-          npm install
+          npm ci
           npm run build
 
-      # - name: Deploy to Hostinger via SSH
-      #   uses: appleboy/scp-action@v0.1.7
-      #   with:
-      #     host: ${{ secrets.HOST }}
-      #     username: ${{ secrets.USERNAME }}
-      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
-      #     port: ${{ secrets.PORT }}
-      #     source: "dist/*"
-      #     target: /home/${{ secrets.USERNAME }}/domains/${{ secrets.DEPLOY_PATH }}
+      - name: Create deployment package
+        run: |
+          # Create a clean deployment directory
+          mkdir -p deployment
+          
+          # Copy essential Laravel files and directories
+          cp -r app deployment/
+          cp -r bootstrap deployment/
+          cp -r config deployment/
+          cp -r database deployment/
+          cp -r public deployment/
+          cp -r resources deployment/
+          cp -r routes deployment/
+          cp -r storage deployment/
+          cp artisan deployment/
+          cp composer.json deployment/
+          cp composer.lock deployment/
+          cp -r vendor deployment/
+          
+          # Copy built assets
+          cp -r dist deployment/public/
+          
+          # Create necessary directories with proper permissions
+          mkdir -p deployment/storage/logs
+          mkdir -p deployment/storage/framework/cache
+          mkdir -p deployment/storage/framework/sessions
+          mkdir -p deployment/storage/framework/views
+          mkdir -p deployment/bootstrap/cache
+
+      - name: Setup SSH key
+        run: |
+          # Create SSH directory
+          mkdir -p ~/.ssh
+          
+          # Add the private key
+          echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # Add host to known hosts
+          ssh-keyscan -p ${{ secrets.PORT }} ${{ secrets.HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy to Hostinger
-        env:
-          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
         run: |
-          # create a temporary private key file
-          echo "$SSH_KEY" > private_key.pem
-          chmod 600 private_key.pem
+          # Upload files using rsync
+          rsync -avz --delete \
+            -e "ssh -p ${{ secrets.PORT }} -o StrictHostKeyChecking=no" \
+            deployment/ \
+            ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/${{ secrets.USERNAME }}/domains/${{ secrets.DEPLOY_PATH }}/
 
-          # sync project files to Hostinger
-          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no -p ${{ secrets.PORT }}" ./ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/${{ secrets.USERNAME }}/domains/${{ secrets.DEPLOY_PATH }}
+      - name: Setup Laravel on server
+        run: |
+          # Run Laravel setup commands on the server
+          ssh -p ${{ secrets.PORT }} -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
+            cd /home/${{ secrets.USERNAME }}/domains/${{ secrets.DEPLOY_PATH }}
+            
+            # Set proper permissions
+            chmod -R 755 storage bootstrap/cache
+            chmod -R 775 storage/logs storage/framework/cache storage/framework/sessions storage/framework/views
+            
+            # Clear and cache config
+            php artisan config:clear
+            php artisan config:cache
+            
+            # Clear and cache routes
+            php artisan route:clear
+            php artisan route:cache
+            
+            # Clear and cache views
+            php artisan view:clear
+            php artisan view:cache
+            
+            # Optimize for production
+            php artisan optimize
+            
+            # Generate application key if needed
+            php artisan key:generate --force
+            
+            echo "Deployment completed successfully!"
+          EOF
 
-          # remove the temporary key
-          rm private_key.pem
+      - name: Cleanup
+        if: always()
+        run: |
+          # Remove SSH key for security
+          rm -f ~/.ssh/id_rsa
+          rm -rf deployment
