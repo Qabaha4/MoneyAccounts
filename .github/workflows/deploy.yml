@@ -52,9 +52,6 @@ jobs:
           cp composer.lock deployment/
           cp -r vendor deployment/
           
-          # Copy built assets
-          cp -r dist deployment/public/
-          
           # Create necessary directories with proper permissions
           mkdir -p deployment/storage/logs
           mkdir -p deployment/storage/framework/cache
