@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Domain
+    |--------------------------------------------------------------------------
+    |
+    | This value determines the domain that should be used for admin panel
+    | access. If set, the admin panel will only be accessible from this
+    | specific domain, providing an additional layer of security.
+    |
+    */
+
+    'admin_domain' => env('ADMIN_DOMAIN'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

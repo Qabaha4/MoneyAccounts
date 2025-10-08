@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\AdminOnly;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -28,18 +29,27 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandName('MoneyAccounts Admin')
+            ->brandLogo(asset('images/logo.svg'))
+            ->brandLogoHeight('2rem')
+            ->favicon(asset('favicon.svg'))
             ->colors([
                 'primary' => Color::Amber,
+                // 'danger' => Color::Red,
+                // 'gray' => Color::Slate,
+                // 'info' => Color::Blue,
+                // 'success' => Color::Emerald,
+                // 'warning' => Color::Orange,
             ])
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\Filament\Admin\Resources')
+            ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
             ->pages([
                 Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
+            ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\Filament\Admin\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -54,6 +64,35 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+                AdminOnly::class,
+            ])
+            ->authGuard('web')
+            // ->login()
+            ->passwordReset()
+            ->emailVerification()
+            ->profile()
+            ->userMenuItems([
+                'profile' => \Filament\Navigation\MenuItem::make()
+                    ->label('Profile')
+                    ->url(fn(): string => route('filament.admin.auth.profile'))
+                    ->icon('heroicon-m-user-circle'),
+                'logout' => \Filament\Navigation\MenuItem::make()
+                    ->label('Logout')
+                    ->url(fn(): string => route('filament.admin.auth.logout'))
+                    ->icon('heroicon-m-arrow-left-on-rectangle'),
+            ])
+            // ->navigationGroups([
+            //     'System Management' => \Filament\Navigation\NavigationGroup::make()
+            //         ->label('System Management')
+            //         ->icon('heroicon-o-cog-6-tooth')
+            //         ->collapsed(),
+            //     'Financial Management' => \Filament\Navigation\NavigationGroup::make()
+            //         ->label('Financial Management')
+            //         ->icon('heroicon-o-currency-dollar')
+            //         ->collapsed(),
+            // ])
+            // ->sidebarCollapsibleOnDesktop()
+            ->maxContentWidth('full')
+            ->spa();
     }
 }

@@ -4,7 +4,7 @@
     "welcome": "مرحباً بك في حسابات المال",
     "dashboard": "لوحة التحكم",
     "github_repo": "مستودع Github",
-    "documentation": "التوثيق",
+    "developer": "المطور",
     "accounts": "الحسابات",
     "transactions": "المعاملات",
     "settings": "الإعدادات"
@@ -63,7 +63,8 @@
     "delete_success": "تم حذف الحساب بنجاح",
     "delete_error": "فشل في حذف الحساب",
     "delete_error_has_transactions": "لا يمكن حذف حساب يحتوي على معاملات موجودة",
-    "deleting": "جاري حذف الحساب..."
+    "deleting": "جاري حذف الحساب...",
+    "update_account": "تحديث الحساب"
   },
   "transactions": {
     "title": "المعاملات",

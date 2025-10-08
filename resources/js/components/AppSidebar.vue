@@ -16,7 +16,7 @@ import { index as accountsIndex } from '@/routes/accounts';
 import { index as transactionsIndex } from '@/routes/transactions';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Wallet, Receipt } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Wallet, Receipt, Globe } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import AppLogo from './AppLogo.vue';
 
@@ -43,13 +43,13 @@ const mainNavItems: NavItem[] = [
 const footerNavItems: NavItem[] = [
     {
         title: t('app.github_repo'),
-        href: 'https://github.com/laravel/vue-starter-kit',
+        href: 'https://github.com/Qabaha4/MoneyAccounts',
         icon: Folder,
     },
     {
-        title: t('app.documentation'),
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
+        title: t('app.developer'),
+        href: 'https://qabaha.net/',
+        icon: Globe,
     },
 ];
 </script>

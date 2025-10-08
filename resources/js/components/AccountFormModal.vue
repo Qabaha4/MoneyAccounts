@@ -117,9 +117,6 @@
           <span v-else></span>
           
           <div class="flex gap-2">
-            <Button variant="outline" @click="closeModal" :disabled="form.processing || deleting">
-              {{ t('common.cancel') }}
-            </Button>
             <Button 
               type="submit" 
               :disabled="form.processing || deleting"

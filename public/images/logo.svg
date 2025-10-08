@@ -1,0 +1,16 @@
+<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Money symbol background -->
+  <circle cx="16" cy="16" r="14" fill="#3B82F6" stroke="#1E40AF" stroke-width="2"/>
+  
+  <!-- Dollar sign -->
+  <path d="M16 6v4m0 12v4m-4-14h6c1.1 0 2 .9 2 2s-.9 2-2 2h-4m0 0h4c1.1 0 2 .9 2 2s-.9 2-2 2h-6" 
+        stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Text -->
+  <text x="38" y="12" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#1F2937">
+    Money Accounts
+  </text>
+  <text x="38" y="24" font-family="Inter, sans-serif" font-size="8" font-weight="400" fill="#6B7280">
+    Admin Panel
+  </text>
+</svg>

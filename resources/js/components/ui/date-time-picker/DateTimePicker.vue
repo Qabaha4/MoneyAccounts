@@ -117,11 +117,7 @@ const handleDateSelect = (date: any) => {
   }
 }
 
-const handleTimeChange = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  selectedTime.value = target.value
-  emitDateTime()
-}
+
 
 const handleTimeBlur = () => {
   // Validate time format and set default if invalid
@@ -174,7 +170,7 @@ const clearDateTime = () => {
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-auto p-0" align="start">
-      <div class="p-4 space-y-4">
+      <div class="p-3 space-y-3">
         <!-- Calendar -->
         <Calendar
           @update:model-value="handleDateSelect"
@@ -182,7 +178,7 @@ const clearDateTime = () => {
         />
         
         <!-- Time Selection -->
-        <div class="space-y-3 border-t pt-4">
+        <div class="space-y-2 border-t pt-3">
           <Label class="text-sm font-medium flex items-center gap-2">
             <Clock class="h-4 w-4" />
             Time
@@ -193,9 +189,9 @@ const clearDateTime = () => {
             <Input
               ref="timeInputRef"
               type="time"
-              :value="selectedTime"
-              @input="handleTimeChange"
+              v-model="selectedTime"
               @blur="handleTimeBlur"
+              @input="emitDateTime"
               class="flex-1"
               placeholder="12:00"
             />
@@ -208,32 +204,16 @@ const clearDateTime = () => {
             >
               Now
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              @click="setCurrentDateTime"
+              class="px-3"
+              type="button"
+            >
+              Today
+            </Button>
           </div>
-          
-          <!-- Time Display -->
-          <div class="text-xs text-muted-foreground text-center">
-            {{ selectedTime ? `Selected: ${selectedTime}` : 'No time selected' }}
-          </div>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="flex gap-2 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            @click="setCurrentDateTime"
-            class="flex-1"
-          >
-            Now
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            @click="clearDateTime"
-            class="flex-1"
-          >
-            Clear
-          </Button>
         </div>
       </div>
     </PopoverContent>

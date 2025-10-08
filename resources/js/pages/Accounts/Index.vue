@@ -27,6 +27,16 @@
                 {{ t('accounts.create_account') }}
               </Button>
             </div>
+            
+            <!-- Search Bar -->
+            <div class="relative mb-4">
+              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                v-model="searchQuery"
+                placeholder="Search accounts by name, type, or currency..."
+                class="pl-9 h-9 text-sm"
+              />
+            </div>
           </div>
 
           <!-- Scrollable Accounts Container -->
@@ -37,9 +47,9 @@
             </div>
             
             <!-- Accounts Grid -->
-            <div v-else-if="accounts.length > 0" class="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-max">
+            <div v-else-if="filteredAccounts.length > 0" class="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-max">
               <Card 
-                v-for="account in accounts" 
+                v-for="account in filteredAccounts" 
                 :key="account.id" 
                 class="overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group h-fit max-h-[350px] flex flex-col cursor-pointer"
                 @click="$inertia.visit(accountRoutes.show(account.id).url)"
@@ -141,10 +151,17 @@
             <div v-else-if="!isLoading && !isRefreshing" class="flex items-center justify-center h-full">
               <div class="text-center py-8 px-4">
                 <div class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 dark:bg-gray-800/80 rounded-full flex items-center justify-center mb-4 dark:border dark:border-gray-700">
-                  <Wallet class="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                  <component :is="searchQuery.trim() ? Search : Wallet" class="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
                 </div>
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">{{ t('dashboard.no_accounts') }}</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto text-sm">Get started by creating your first account.</p>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  {{ searchQuery.trim() ? 'No accounts found' : t('dashboard.no_accounts') }}
+                </h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto text-sm">
+                  {{ searchQuery.trim() ? `No accounts match "${searchQuery.trim()}". Try a different search term.` : 'Get started by creating your first account.' }}
+                </p>
+                <Button v-if="searchQuery.trim()" @click="searchQuery = ''" variant="outline" class="w-full sm:w-auto me-2">
+                  Clear Search
+                </Button>
                 <Button @click="openCreateModal" class="w-full sm:w-auto">
                   <PlusIcon class="w-4 h-4 me-2" />
                   {{ t('accounts.create_account') }}
@@ -167,13 +184,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+import { router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus as PlusIcon, Eye, Edit, Wallet } from 'lucide-vue-next'
+import { Input } from '@/components/ui/input'
+import { Plus as PlusIcon, Eye, Edit, Wallet, Search } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import accountRoutes from '@/routes/accounts'
 import AccountFormModal from '@/components/AccountFormModal.vue'
@@ -198,6 +216,7 @@ interface Account {
   type: string
   currency_id: number
   currency: Currency
+  description?: string | null
   created_at: string
   updated_at: string
 }
@@ -214,6 +233,25 @@ const editingAccount = ref<Account | null>(null)
 // Loading states
 const isLoading = ref(false)
 const isRefreshing = ref(false)
+
+// Search functionality
+const searchQuery = ref('')
+
+// Computed filtered accounts
+const filteredAccounts = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return props.accounts
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim()
+  return props.accounts.filter(account => 
+    account.name.toLowerCase().includes(query) ||
+    account.type.toLowerCase().includes(query) ||
+    account.currency.code.toLowerCase().includes(query) ||
+    account.currency.name.toLowerCase().includes(query) ||
+    (account.description && account.description.toLowerCase().includes(query))
+  )
+})
 
 const openCreateModal = () => {
   editingAccount.value = null

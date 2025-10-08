@@ -26,18 +26,18 @@ class TransactionController extends Controller
                 $q->whereHas('account', function ($accountQuery) {
                     $accountQuery->where('user_id', Auth::id());
                 })
-                // Incoming transfers (transfers to user's accounts)
-                ->orWhere(function ($transferQuery) use ($userAccountIds) {
-                    $transferQuery->whereIn('transfer_to_account_id', $userAccountIds)
-                        ->where('type', 'transfer');
-                });
+                    // Incoming transfers (transfers to user's accounts)
+                    ->orWhere(function ($transferQuery) use ($userAccountIds) {
+                        $transferQuery->whereIn('transfer_to_account_id', $userAccountIds)
+                            ->where('type', 'transfer');
+                    });
             });
 
         // Filter by account if specified
         if ($request->filled('account_id')) {
             $baseQuery->where(function ($q) use ($request) {
                 $q->where('account_id', $request->account_id)
-                  ->orWhere('transfer_to_account_id', $request->account_id);
+                    ->orWhere('transfer_to_account_id', $request->account_id);
             });
         }
 
@@ -99,7 +99,7 @@ class TransactionController extends Controller
 
         // Add is_incoming_transfer flag to each transaction
         $transactions->getCollection()->transform(function ($transaction) use ($userAccountIds) {
-            $transaction->is_incoming_transfer = in_array($transaction->transfer_to_account_id, $userAccountIds) 
+            $transaction->is_incoming_transfer = in_array($transaction->transfer_to_account_id, $userAccountIds)
                 && !in_array($transaction->account_id, $userAccountIds);
             return $transaction;
         });
@@ -155,11 +155,11 @@ class TransactionController extends Controller
             Account::where('id', $validated['transfer_to_account_id'])
                 ->where('user_id', Auth::id())
                 ->firstOrFail();
-            
+
             // Check if this is a cross-currency transfer
             $sourceAccount = Account::with('currency')->find($validated['account_id']);
             $destinationAccount = Account::with('currency')->find($validated['transfer_to_account_id']);
-            
+
             if ($sourceAccount->currency_id !== $destinationAccount->currency_id) {
                 // Cross-currency transfer requires exchange rate and converted amount
                 if (!$validated['exchange_rate'] || !$validated['converted_amount']) {
@@ -265,11 +265,11 @@ class TransactionController extends Controller
             Account::where('id', $validated['transfer_to_account_id'])
                 ->where('user_id', Auth::id())
                 ->firstOrFail();
-            
+
             // Check if this is a cross-currency transfer
             $sourceAccount = Account::with('currency')->find($validated['account_id']);
             $destinationAccount = Account::with('currency')->find($validated['transfer_to_account_id']);
-            
+
             if ($sourceAccount->currency_id !== $destinationAccount->currency_id) {
                 // Cross-currency transfer requires exchange rate and converted amount
                 if (!$validated['exchange_rate'] || !$validated['converted_amount']) {

@@ -53,6 +53,8 @@ interface Props {
     accounts: Account[];
     totalBalance: number;
     recentTransactions: Transaction[];
+    userCurrencies: Currency[];
+    balancesByCurrency: Record<number, number>;
 }
 
 const props = defineProps<Props>();
@@ -71,6 +73,9 @@ const selectedTransaction = ref<Transaction | null>(null);
 const isLoading = ref(false);
 const isRefreshing = ref(false);
 
+// Currency selector state
+const selectedCurrency = ref<Currency | null>(null);
+
 const checkMobile = () => {
     isMobile.value = window.innerWidth < 768; // md breakpoint
     // Set initial state based on screen size
@@ -84,6 +89,21 @@ const checkMobile = () => {
 onMounted(() => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
+    
+    // Initialize selected currency to the first available currency or primary currency
+    if (props.userCurrencies.length > 0) {
+        // Try to find the most common currency among accounts, or use the first one
+        const currencyUsage = props.accounts.reduce((acc, account) => {
+            acc[account.currency.id] = (acc[account.currency.id] || 0) + 1;
+            return acc;
+        }, {} as Record<number, number>);
+        
+        const mostUsedCurrencyId = Object.keys(currencyUsage).reduce((a, b) => 
+            currencyUsage[Number(a)] > currencyUsage[Number(b)] ? a : b
+        );
+        
+        selectedCurrency.value = props.userCurrencies.find(c => c.id === Number(mostUsedCurrencyId)) || props.userCurrencies[0];
+    }
 });
 
 onUnmounted(() => {
@@ -97,10 +117,16 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-// Computed property to get primary currency symbol
-const primaryCurrencySymbol = computed(() => {
-    // Use the currency symbol from the first account, or default to $ if no accounts
-    return props.accounts.length > 0 ? props.accounts[0].currency.symbol : '$';
+// Computed property for total balance in selected currency (sum of accounts in that currency only)
+const convertedTotalBalance = computed(() => {
+    if (!selectedCurrency.value) return props.totalBalance;
+    
+    return props.balancesByCurrency[selectedCurrency.value.id] || 0;
+});
+
+// Computed property for selected currency symbol
+const selectedCurrencySymbol = computed(() => {
+    return selectedCurrency.value?.symbol || '$';
 });
 
 const getTransactionIcon = (type: string) => {
@@ -190,6 +216,11 @@ const getTransactionCurrency = (transaction: Transaction) => {
     }
     return transaction.account.currency;
 };
+
+// Currency change handler
+const handleCurrencyChange = (currency: Currency) => {
+    selectedCurrency.value = currency;
+};
 </script>
 
 <template>
@@ -233,7 +264,7 @@ const getTransactionCurrency = (transaction: Transaction) => {
                 <div class="space-y-4" v-else>
                     <!-- Dashboard Balance Hero -->
                     <HeroSection 
-                        :main-sec-val="`${Number(props.totalBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${primaryCurrencySymbol}`"
+                        :main-sec-val="`${Number(convertedTotalBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${selectedCurrencySymbol}`"
                         :main-sec-label="'Total Balance'"
                         :sub-sec-p1-val="props.accounts.length.toString()"
                         :sub-sec-p1-label="'Total Wallets'"
@@ -241,6 +272,10 @@ const getTransactionCurrency = (transaction: Transaction) => {
                         :sub-sec-p2-label="'Active Wallets'"
                         :sub-sec-p3-val="props.recentTransactions.length.toString()"
                         :sub-sec-p3-label="'Latest Activity'"
+                        :show-currency-selector="true"
+                        :currencies="props.userCurrencies"
+                        :selected-currency="selectedCurrency || undefined"
+                        @currency-change="handleCurrencyChange"
                     />
 
                     <!-- Account Overview and Recent Transactions -->
@@ -278,7 +313,11 @@ const getTransactionCurrency = (transaction: Transaction) => {
                                                 {{ account.name }}
                                             </h4>
                                             <div class="flex items-center gap-2">
-                                                <Badge :variant="account.is_active ? 'default' : 'secondary'" class="text-xs px-2 py-0.5">
+                                                <Badge 
+                                                    :variant="account.is_active ? 'outline' : 'outline'" 
+                                                    :class="account.is_active ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700'"
+                                                    class="text-xs px-2 py-0.5"
+                                                >
                                                     {{ account.is_active ? t('common.active') : t('common.inactive') }}
                                                 </Badge>
                                                 <span class="text-xs text-slate-500 dark:text-slate-400">{{ account.currency.code }}</span>

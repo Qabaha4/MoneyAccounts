@@ -558,7 +558,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, nextTick } from 'vue'
+import { computed, reactive, ref, nextTick, onMounted } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -640,7 +640,7 @@ const editingTransaction = ref<Transaction | null>(null)
 const isLoading = ref(false)
 const isFilterLoading = ref(false)
 
-// Helper function to get start of current month
+// Helper function to format date
 const formatDateLocal = (date: Date) => {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -648,9 +648,10 @@ const formatDateLocal = (date: Date) => {
   return `${year}-${month}-${day}`
 }
 
-const getStartOfCurrentMonth = () => {
+const getStartOfLastWeek = () => {
   const now = new Date()
-  return formatDateLocal(new Date(now.getFullYear(), now.getMonth(), 1))
+  const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  return formatDateLocal(lastWeek)
 }
 
 const getCurrentDate = () => {
@@ -662,7 +663,7 @@ const filterForm = reactive({
   type: props.filters.type || 'all',
   search: props.filters.search || '',
   sort_by: props.filters.sort_by || 'transaction_date_desc',
-  date_from: props.filters.date_from || getStartOfCurrentMonth(),
+  date_from: props.filters.date_from || getStartOfLastWeek(),
   date_to: props.filters.date_to || getCurrentDate()
 })
 
@@ -889,8 +890,8 @@ const clearFilters = () => {
   filterForm.type = 'all'
   filterForm.search = ''
   filterForm.sort_by = 'transaction_date_desc'
-  filterForm.date_from = getStartOfCurrentMonth()
-  filterForm.date_to = getCurrentDate()
+  // filterForm.date_from = getStartOfLastWeek()
+  // filterForm.date_to = getCurrentDate()
   
   router.get('/transactions', {}, {
     preserveState: true,
@@ -1005,6 +1006,15 @@ const handleTransactionEditSuccess = () => {
   editingTransaction.value = null
   router.reload()
 }
+
+// Apply default filters on mount if no filters are currently applied
+onMounted(() => {
+  // Check if no date filters are currently applied from the backend
+  if (!props.filters.date_from && !props.filters.date_to) {
+    // Apply default last week filter
+    applyFilters()
+  }
+})
 </script>
 
 <style scoped>

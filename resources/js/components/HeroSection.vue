@@ -2,7 +2,17 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit } from 'lucide-vue-next';
+
+interface Currency {
+    id: number;
+    code: string;
+    name: string;
+    symbol: string;
+    is_active: boolean;
+    decimal_places: number;
+}
 
 interface Account {
     id: number;
@@ -12,14 +22,7 @@ interface Account {
     balance: number;
     initial_balance: number;
     is_active: boolean;
-    currency: {
-        id: number;
-        code: string;
-        name: string;
-        symbol: string;
-        is_active: boolean;
-        decimal_places: number;
-    };
+    currency: Currency;
 }
 
 interface Transaction {
@@ -44,16 +47,22 @@ interface Props {
     showStatus?: boolean;
     statusVal?: string;
     showEditButton?: boolean;
+    showCurrencySelector?: boolean;
+    currencies?: Currency[];
+    selectedCurrency?: Currency;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     showStatus: false,
     statusVal: 'Active',
-    showEditButton: false
+    showEditButton: false,
+    showCurrencySelector: false,
+    currencies: () => [],
 });
 
 const emit = defineEmits<{
-    edit: []
+    edit: [];
+    currencyChange: [currency: Currency];
 }>();
 
 const { t } = useI18n();
@@ -102,7 +111,33 @@ const isNegativeBalance = computed(() => {
         <div class="relative">
             <div class="mb-3 sm:mb-5">
                 <div class="text-center">
-                    <div class="text-xs sm:text-sm font-medium text-slate-400 mb-1 sm:mb-1.5">{{ props.mainSecLabel.toUpperCase() }}</div>
+                    <div class="flex items-center justify-center gap-2 mb-1 sm:mb-1.5">
+                        <div class="text-xs sm:text-sm font-medium text-slate-400">{{ props.mainSecLabel.toUpperCase() }}</div>
+                        <div v-if="props.showCurrencySelector && props.currencies && props.currencies.length > 1" class="flex items-center">
+                            <span class="text-xs text-slate-500 mr-2">in</span>
+                            <Select 
+                                :model-value="props.selectedCurrency?.id?.toString()" 
+                                @update:model-value="(value) => {
+                                    const currency = props.currencies?.find(c => c.id.toString() === value);
+                                    if (currency) emit('currencyChange', currency);
+                                }"
+                            >
+                                <SelectTrigger class="w-auto h-6 px-2 py-1 text-xs bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50">
+                                    <SelectValue :placeholder="props.selectedCurrency?.code || 'Select'" />
+                                </SelectTrigger>
+                                <SelectContent class="bg-slate-800 border-slate-700">
+                                    <SelectItem 
+                                        v-for="currency in props.currencies" 
+                                        :key="currency.id" 
+                                        :value="currency.id.toString()"
+                                        class="text-slate-300 hover:bg-slate-700 focus:bg-slate-700"
+                                    >
+                                        {{ currency.code }} ({{ currency.symbol }})
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
                     <div class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight" 
                          :class="isNegativeBalance ? 'text-red-400' : 'text-emerald-400'">
                         {{ props.mainSecVal }}

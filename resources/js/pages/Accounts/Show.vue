@@ -15,7 +15,11 @@
           {{ account.name }}
         </h2>
         <div class="flex items-center gap-1">
-          <Badge :variant="account.is_active ? 'default' : 'secondary'" class="px-2 py-0.5 text-xs">
+          <Badge 
+            :variant="account.is_active ? 'outline' : 'secondary'" 
+            :class="account.is_active ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700' : ''"
+            class="px-2 py-0.5 text-xs"
+          >
             {{ account.is_active ? t('accounts.active') : t('accounts.inactive') }}
           </Badge>
           <Button size="sm" variant="ghost" @click="openAccountEditModal" class="h-7 w-7 p-0 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20">
@@ -79,6 +83,17 @@
               </div>
             </div>
 
+            <!-- Search Bar -->
+            <div class="relative mb-6">
+              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search transactions..."
+                class="pl-10"
+              />
+            </div>
+
             <div v-if="loading" class="space-y-3">
               <div v-for="i in 3" :key="i" class="flex items-center gap-3 p-3 border rounded-xl">
                 <Skeleton class="h-12 w-12 rounded-xl" />
@@ -90,9 +105,9 @@
               </div>
             </div>
 
-            <div v-else-if="account.transactions && account.transactions.length > 0" class="space-y-2">
+            <div v-else-if="filteredTransactions.length > 0" class="space-y-2">
               <div 
-                v-for="transaction in account.transactions" 
+                v-for="transaction in filteredTransactions" 
                 :key="transaction.id"
                 class="group flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer border-l-4"
                 :class="{
@@ -179,14 +194,17 @@
 
             <div v-else class="text-center py-12">
               <div class="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Receipt class="w-8 h-8 text-slate-400" />
+                <component :is="searchQuery.trim() ? Search : Receipt" class="w-8 h-8 text-slate-400" />
               </div>
               <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
-                {{ t('transactions.no_transactions') }}
+                {{ searchQuery.trim() ? 'No transactions found' : t('transactions.no_transactions') }}
               </h3>
               <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                {{ t('transactions.start_adding') }}
+                {{ searchQuery.trim() ? `No transactions match "${searchQuery.trim()}". Try a different search term.` : t('transactions.start_adding') }}
               </p>
+              <Button v-if="searchQuery.trim()" @click="searchQuery = ''" variant="outline" class="me-2">
+                Clear Search
+              </Button>
               <Button @click="openCreateModal" class="bg-gradient-to-r from-blue-600 to-blue-700">
                 <Plus class="w-4 h-4 me-2" />
                 {{ t('transactions.add_transaction') }}
@@ -230,7 +248,8 @@ import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, AlertCircle } from 'lucide-vue-next'
+import { Input } from '@/components/ui/input'
+import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, AlertCircle, Search } from 'lucide-vue-next'
 import accounts from '@/routes/accounts'
 import transactions from '@/routes/transactions'
 import TransactionModal from '@/components/TransactionModal.vue'
@@ -300,11 +319,33 @@ const error = ref<string | null>(null)
 const isTransactionModalOpen = ref(false)
 const editingTransaction = ref<Transaction | null>(null)
 const isAccountModalOpen = ref(false)
+const searchQuery = ref('')
 
 // Computed properties for HeroSection component
 const totalBalance = computed(() => props.account.balance)
 const accountsForHero = computed(() => [props.account])
 const recentTransactionsForHero = computed(() => props.account.transactions?.slice(0, 3) || [])
+
+// Filtered transactions based on search query
+const filteredTransactions = computed(() => {
+  if (!props.account.transactions) return []
+  
+  if (!searchQuery.value.trim()) {
+    return props.account.transactions
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim()
+  return props.account.transactions.filter(transaction => {
+    return (
+      transaction.description?.toLowerCase().includes(query) ||
+      transaction.type.toLowerCase().includes(query) ||
+      transaction.amount.toString().includes(query) ||
+      transaction.transaction_date.includes(query) ||
+      (transaction.transfer_to_account?.name?.toLowerCase().includes(query)) ||
+      (transaction.account?.name?.toLowerCase().includes(query))
+    )
+  })
+})
 
 // Calculate transactions for current month
 const monthlyTransactionsCount = computed(() => {

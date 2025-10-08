@@ -7,7 +7,7 @@
     "transactions": "Transactions",
     "settings": "Settings",
     "github_repo": "Github Repo",
-    "documentation": "Documentation"
+    "developer": "Developer"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -63,7 +63,8 @@
     "delete_success": "Account deleted successfully",
     "delete_error": "Failed to delete account",
     "delete_error_has_transactions": "Cannot delete account with existing transactions",
-    "deleting": "Deleting account..."
+    "deleting": "Deleting account...",
+    "update_account": "Update Account"
   },
   "transactions": {
     "title": "Transactions",

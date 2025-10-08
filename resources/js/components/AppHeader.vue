@@ -2,8 +2,10 @@
 import AppLogo from '@/components/AppLogo.vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -34,12 +36,36 @@ import { getInitials } from '@/composables/useInitials';
 import { toUrl, urlIsActive } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
-import { InertiaLinkProps, Link, usePage } from '@inertiajs/vue3';
+import { InertiaLinkProps, Link, usePage, router } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 interface Props {
     breadcrumbs?: BreadcrumbItem[];
+}
+
+interface SearchAccount {
+    id: number;
+    name: string;
+    description?: string;
+}
+
+interface SearchTransaction {
+    id: number;
+    description: string;
+    amount: number;
+    account_id: number;
+    account?: {
+        name: string;
+    };
+    currency?: {
+        code: string;
+    };
+}
+
+interface SearchResults {
+    accounts: SearchAccount[];
+    transactions: SearchTransaction[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -48,6 +74,81 @@ const props = withDefaults(defineProps<Props>(), {
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
+
+// Search functionality
+const searchQuery = ref('');
+const isSearchFocused = ref(false);
+const isSearching = ref(false);
+const searchResults = ref<SearchResults>({
+    accounts: [],
+    transactions: []
+});
+
+let debounceTimeout: number = 0;
+
+const handleSearch = () => {
+    clearTimeout(debounceTimeout);
+    
+    if (!searchQuery.value.trim()) {
+        searchResults.value = { accounts: [], transactions: [] };
+        isSearching.value = false;
+        return;
+    }
+    
+    isSearching.value = true;
+    
+    debounceTimeout = setTimeout(async () => {
+        try {
+            const response = await fetch(`/search?query=${encodeURIComponent(searchQuery.value)}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                searchResults.value = data;
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+        } finally {
+            isSearching.value = false;
+        }
+    }, 300);
+};
+
+const handleSearchBlur = () => {
+    // Delay hiding results to allow for clicks
+    setTimeout(() => {
+        isSearchFocused.value = false;
+    }, 200);
+};
+
+const navigateToAccount = (accountId: number) => {
+    router.visit(`/accounts/${accountId}`);
+    isSearchFocused.value = false;
+    searchQuery.value = '';
+};
+
+const navigateToTransaction = (transactionId: number) => {
+    // Navigate to the account that contains this transaction
+    const transaction = searchResults.value.transactions.find(t => t.id === transactionId);
+    if (transaction?.account_id) {
+        router.visit(`/accounts/${transaction.account_id}`);
+    }
+    isSearchFocused.value = false;
+    searchQuery.value = '';
+};
+
+const formatCurrency = (amount: number, currencyCode: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currencyCode
+    }).format(amount);
+};
+
+const isSearchOpen = ref(false);
 
 const isCurrentRoute = computed(
     () => (url: NonNullable<InertiaLinkProps['href']>) =>
@@ -61,6 +162,8 @@ const activeItemStyles = computed(
             : '',
 );
 
+
+
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
@@ -72,12 +175,12 @@ const mainNavItems: NavItem[] = [
 const rightNavItems: NavItem[] = [
     {
         title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
+        href: 'https://github.com/money-accounts-management/m.a.m.',
         icon: Folder,
     },
     {
         title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
+        href: '#',
         icon: BookOpen,
     },
 ];
@@ -190,15 +293,73 @@ const rightNavItems: NavItem[] = [
 
                 <div class="ms-auto flex items-center space-x-2">
                     <div class="relative flex items-center space-x-1">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            class="group h-9 w-9 cursor-pointer"
-                        >
-                            <Search
-                                class="size-5 opacity-80 group-hover:opacity-100"
+                        <!-- Search -->
+                        <div class="relative flex-1 max-w-sm">
+                            <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                v-model="searchQuery"
+                                placeholder="Search accounts & transactions..."
+                                class="pl-9 pr-4 h-9 bg-background/50 border-border/50 focus:bg-background focus:border-border"
+                                @input="handleSearch"
+                                @focus="isSearchFocused = true"
+                                @blur="handleSearchBlur"
                             />
-                        </Button>
+                            
+                            <!-- Search Results Dropdown -->
+                            <div
+                                v-if="isSearchFocused && (searchResults.accounts.length > 0 || searchResults.transactions.length > 0 || isSearching)"
+                                class="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-96 overflow-y-auto"
+                            >
+                                <div v-if="isSearching" class="p-4 text-center text-muted-foreground">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                        Searching...
+                                    </div>
+                                </div>
+                                
+                                <div v-else-if="searchResults.accounts.length === 0 && searchResults.transactions.length === 0 && searchQuery.trim()" class="p-4 text-center text-muted-foreground">
+                                    No results found
+                                </div>
+                                
+                                <div v-else>
+                                    <!-- Accounts Results -->
+                                    <div v-if="searchResults.accounts.length > 0" class="p-2">
+                                        <h3 class="text-sm font-medium text-muted-foreground mb-2 px-2">Accounts</h3>
+                                        <div
+                                            v-for="account in searchResults.accounts"
+                                            :key="`account-${account.id}`"
+                                            class="flex items-center gap-3 p-2 rounded-sm hover:bg-accent cursor-pointer"
+                                            @click="navigateToAccount(account.id)"
+                                        >
+                                            <Folder class="h-4 w-4 text-blue-500" />
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium truncate">{{ account.name }}</p>
+                                                <p v-if="account.description" class="text-xs text-muted-foreground truncate">{{ account.description }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Transactions Results -->
+                                    <div v-if="searchResults.transactions.length > 0" class="p-2">
+                                        <h3 class="text-sm font-medium text-muted-foreground mb-2 px-2">Transactions</h3>
+                                        <div
+                                            v-for="transaction in searchResults.transactions"
+                                            :key="`transaction-${transaction.id}`"
+                                            class="flex items-center gap-3 p-2 rounded-sm hover:bg-accent cursor-pointer"
+                                            @click="navigateToTransaction(transaction.id)"
+                                        >
+                                            <BookOpen class="h-4 w-4 text-green-500" />
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium truncate">{{ transaction.description }}</p>
+                                                <p class="text-xs text-muted-foreground truncate">
+                                                    {{ transaction.account?.name }} • {{ formatCurrency(transaction.amount, transaction.currency?.code) }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <LanguageSwitcher />
 
@@ -281,5 +442,7 @@ const rightNavItems: NavItem[] = [
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </div>
         </div>
+
+
     </div>
 </template>
