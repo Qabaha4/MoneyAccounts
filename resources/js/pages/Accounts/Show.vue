@@ -22,6 +22,9 @@
           >
             {{ account.is_active ? t('accounts.active') : t('accounts.inactive') }}
           </Badge>
+          <Button size="sm" variant="ghost" @click="openPrintReport" class="h-7 w-7 p-0 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20" title="Print Report">
+            <Printer class="w-4 h-4" />
+          </Button>
           <Button size="sm" variant="ghost" @click="openAccountEditModal" class="h-7 w-7 p-0 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20">
             <Edit class="w-4 h-4" />
           </Button>
@@ -74,6 +77,9 @@
                 {{ t('transactions.recent_transactions') }}
               </h3>
               <div class="flex items-center gap-2">
+                <Button variant="ghost" size="sm" @click="openPrintReport" class="h-8" title="Print Report">
+                  <Printer class="w-4 h-4" />
+                </Button>
                 <Button variant="ghost" size="sm" @click="showAllTransactions" class="h-8" title="View all transactions">
                   <Receipt class="w-4 h-4" />
                 </Button>
@@ -249,7 +255,7 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
-import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, AlertCircle, Search } from 'lucide-vue-next'
+import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, AlertCircle, Search, Printer } from 'lucide-vue-next'
 import accounts from '@/routes/accounts'
 import transactions from '@/routes/transactions'
 import TransactionModal from '@/components/TransactionModal.vue'
@@ -489,6 +495,10 @@ const handleAccountSuccess = () => {
 
 const navigateToAccount = (accountId: number) => {
   router.visit(accounts.show({ account: accountId }).url)
+}
+
+const openPrintReport = () => {
+  router.visit(`/accounts/${props.account.id}/report`)
 }
 </script>
 

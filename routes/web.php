@@ -28,29 +28,38 @@ Route::post('/locale', function () {
 
 Route::get('dashboard', function () {
     $user = Auth::user();
-    $accounts = \App\Models\Account::with(['currency', 'transactions' => function ($query) {
-        $query->orderBy('transaction_date', 'desc')->limit(5);
-    }])->where('user_id', $user->id)->get();
 
-    $totalBalance = $accounts->sum('balance');
+    // Fetch all accounts with needed data, including max transaction date for sorting
+    $allAccounts = \App\Models\Account::with(['currency', 'transactions' => function ($query) {
+        $query->orderBy('transaction_date', 'desc')->limit(5);
+    }])
+        ->where('user_id', $user->id)
+        ->withMax('transactions', 'transaction_date')
+        ->get();
+
+    // Calculate totals using ALL accounts
+    $totalBalance = $allAccounts->sum('balance');
 
     // Get all currencies used by user's accounts
-    $userCurrencies = \App\Models\Currency::whereIn('id', $accounts->pluck('currency_id')->unique())
+    $userCurrencies = \App\Models\Currency::whereIn('id', $allAccounts->pluck('currency_id')->unique())
         ->where('is_active', true)
         ->orderBy('code')
         ->get();
 
-    // Group account balances by currency (sum accounts in same currency)
+    // Group account balances by currency
     $balancesByCurrency = [];
 
     foreach ($userCurrencies as $currency) {
-        $balancesByCurrency[$currency->id] = $accounts
+        $balancesByCurrency[$currency->id] = $allAccounts
             ->where('currency_id', $currency->id)
             ->sum('balance');
     }
 
+    // Sort accounts by last transaction date and take top 5 for display
+    $recentAccounts = $allAccounts->sortByDesc('transactions_max_transaction_date')->values()->take(5);
+
     // Get user's account IDs for filtering
-    $userAccountIds = $accounts->pluck('id');
+    $userAccountIds = $allAccounts->pluck('id');
 
     // Get all transactions where either the from_account or to_account belongs to the user
     $recentTransactions = \App\Models\Transaction::with(['account.currency', 'transferToAccount.currency'])
@@ -71,7 +80,7 @@ Route::get('dashboard', function () {
     });
 
     return Inertia::render('Dashboard', [
-        'accounts' => $accounts,
+        'accounts' => $recentAccounts,
         'totalBalance' => $totalBalance,
         'recentTransactions' => $recentTransactions,
         'userCurrencies' => $userCurrencies,
@@ -82,6 +91,7 @@ Route::get('dashboard', function () {
 // Authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('accounts', AccountController::class)->except(['create', 'edit']);
+    Route::get('accounts/{account}/report', [App\Http\Controllers\AccountReportController::class, 'show'])->name('accounts.report');
     Route::resource('transactions', TransactionController::class)->except(['create', 'edit', 'show']);
 
     // Global search endpoint

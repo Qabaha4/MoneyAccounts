@@ -1,6 +1,20 @@
 <script setup lang="ts">
 import { dashboard, login, register } from '@/routes';
 import { Head, Link } from '@inertiajs/vue3';
+import { 
+    Wallet, 
+    CheckCircle2, 
+    CreditCard, 
+    Layers, 
+    Activity, 
+    Coins, 
+    LineChart, 
+    ArrowRightLeft, 
+    Globe,
+    ShieldCheck
+} from 'lucide-vue-next';
+
+const currentYear = new Date().getFullYear();
 </script>
 
 <template>
@@ -17,9 +31,7 @@ import { Head, Link } from '@inertiajs/vue3';
                 <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
                         <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 4a2 2 0 0 0-2 2v1h16V6a2 2 0 0 0-2-2H4zM2 9v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9H2zm6 3a1 1 0 1 1 2 0 1 1 0 0 1-2 0z" clip-rule="evenodd"/>
-                            </svg>
+                            <Wallet class="w-5 h-5 text-white" />
                         </div>
                         <span class="ml-2 text-xl font-semibold text-gray-900 dark:text-white">M.A.M.</span>
                     </div>
@@ -93,21 +105,15 @@ import { Head, Link } from '@inertiajs/vue3';
                     
                     <div class="flex items-center space-x-8 text-sm text-gray-500 dark:text-gray-400">
                         <div class="flex items-center space-x-2">
-                            <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
+                            <CheckCircle2 class="w-5 h-5 text-blue-500" />
                             <span>Multi-Currency Support</span>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
+                            <CheckCircle2 class="w-5 h-5 text-blue-500" />
                             <span>Real-time Analytics</span>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
+                            <ShieldCheck class="w-5 h-5 text-blue-500" />
                             <span>Secure & Private</span>
                         </div>
                     </div>
@@ -134,9 +140,7 @@ import { Head, Link } from '@inertiajs/vue3';
                                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg dark:bg-gray-700">
                                     <div class="flex items-center space-x-3">
                                         <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center dark:bg-blue-900">
-                                            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"></path>
-                                            </svg>
+                                            <CreditCard class="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                         </div>
                                         <div>
                                             <div class="font-medium text-gray-900 dark:text-white">Checking Account</div>
@@ -150,9 +154,7 @@ import { Head, Link } from '@inertiajs/vue3';
                                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg dark:bg-gray-700">
                                     <div class="flex items-center space-x-3">
                                         <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center dark:bg-blue-900">
-                                            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"></path>
-                                            </svg>
+                                            <CreditCard class="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                         </div>
                                         <div>
                                             <div class="font-medium text-gray-900 dark:text-white">Savings Account</div>
@@ -188,9 +190,7 @@ import { Head, Link } from '@inertiajs/vue3';
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-shadow dark:bg-gray-800">
                     <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center mb-6 dark:bg-gradient-to-br dark:from-blue-900 dark:to-purple-900">
-                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
+                        <Layers class="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <h3 class="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Multi-Account Management</h3>
                     <p class="text-gray-600 dark:text-gray-300">Create and manage multiple financial accounts including checking, savings, credit, and investment accounts all in one place.</p>
@@ -198,9 +198,7 @@ import { Head, Link } from '@inertiajs/vue3';
                 
                 <div class="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-shadow dark:bg-gray-800">
                     <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6 dark:bg-blue-900">
-                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
+                        <Activity class="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <h3 class="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Transaction Tracking</h3>
                     <p class="text-gray-600 dark:text-gray-300">Record and categorize income, expenses, and transfers with detailed transaction history and real-time balance updates.</p>
@@ -208,9 +206,7 @@ import { Head, Link } from '@inertiajs/vue3';
                 
                 <div class="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-shadow dark:bg-gray-800">
                     <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6 dark:bg-purple-900">
-                        <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+                        <Coins class="w-6 h-6 text-purple-600 dark:text-purple-400" />
                     </div>
                     <h3 class="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Multi-Currency Support</h3>
                     <p class="text-gray-600 dark:text-gray-300">Handle different currencies with automatic conversion rates and maintain accurate balances across all your international accounts.</p>
@@ -218,9 +214,7 @@ import { Head, Link } from '@inertiajs/vue3';
                 
                 <div class="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-shadow dark:bg-gray-800">
                     <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-6 dark:bg-teal-900">
-                        <svg class="w-6 h-6 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
+                        <LineChart class="w-6 h-6 text-teal-600 dark:text-teal-400" />
                     </div>
                     <h3 class="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Dashboard Overview</h3>
                     <p class="text-gray-600 dark:text-gray-300">Get real-time insights into your financial health with comprehensive dashboards showing balances, trends, and transaction summaries.</p>
@@ -228,9 +222,7 @@ import { Head, Link } from '@inertiajs/vue3';
                 
                 <div class="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-shadow dark:bg-gray-800">
                     <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-6 dark:bg-orange-900">
-                        <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                        </svg>
+                        <ArrowRightLeft class="w-6 h-6 text-orange-600 dark:text-orange-400" />
                     </div>
                     <h3 class="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Account Transfers</h3>
                     <p class="text-gray-600 dark:text-gray-300">Easily transfer funds between your accounts with automatic balance updates and detailed transfer history tracking.</p>
@@ -238,9 +230,7 @@ import { Head, Link } from '@inertiajs/vue3';
                 
                 <div class="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-shadow dark:bg-gray-800">
                     <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6 dark:bg-indigo-900">
-                        <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
-                        </svg>
+                        <Globe class="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <h3 class="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Internationalization</h3>
                     <p class="text-gray-600 dark:text-gray-300">Full support for English and Arabic languages, making the platform accessible to users worldwide with localized interfaces.</p>
@@ -291,9 +281,7 @@ import { Head, Link } from '@inertiajs/vue3';
                 <div class="space-y-4">
                     <div class="flex items-center">
                         <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-5 h-5" fill="white">
-                                <path fill-rule="evenodd" d="M4 4a2 2 0 0 0-2 2v1h16V6a2 2 0 0 0-2-2H4zM2 9v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9H2zm6 3a1 1 0 1 1 2 0 1 1 0 0 1-2 0z" clip-rule="evenodd"/>
-                            </svg>
+                            <Wallet class="w-5 h-5 text-white" />
                         </div>
                         <span class="ml-2 text-xl font-semibold">M.A.M.</span>
                     </div>
@@ -334,7 +322,7 @@ import { Head, Link } from '@inertiajs/vue3';
             </div>
             
             <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 Money Accounts Management. All rights reserved.</p>
+                <p>&copy; {{ currentYear }} Money Accounts Management. All rights reserved.</p>
             </div>
         </div>
     </footer>

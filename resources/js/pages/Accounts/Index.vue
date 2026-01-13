@@ -67,11 +67,20 @@
                       </span>
                     </div>
 
-                    <!-- Currency and Edit Button -->
+                    <!-- Currency and Action Buttons -->
                     <div class="flex items-center gap-2 flex-shrink-0">
                       <div class="text-xs text-slate-400 font-mono">
                         {{ account.currency.symbol }}
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        @click.stop="openPrintReport(account.id)"
+                        class="h-6 w-6 p-0 text-slate-300 hover:text-white hover:bg-white/10"
+                        title="Print Report"
+                      >
+                        <Printer class="w-3 h-3" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -191,7 +200,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Plus as PlusIcon, Eye, Edit, Wallet, Search } from 'lucide-vue-next'
+import { Plus as PlusIcon, Eye, Edit, Wallet, Search, Printer } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import accountRoutes from '@/routes/accounts'
 import AccountFormModal from '@/components/AccountFormModal.vue'
@@ -271,6 +280,10 @@ const handleModalSuccess = () => {
       isRefreshing.value = false
     }
   })
+}
+
+const openPrintReport = (accountId: number) => {
+  router.visit(`/accounts/${accountId}/report`)
 }
 </script>
 
