@@ -241,7 +241,7 @@ interface Transaction {
   description: string | null
   transaction_date: string
   account: Account
-  transfer_to_account?: Account
+  transfer_to_account?: Account | null
   exchange_rate?: string | null
   converted_amount?: string | null
   exchange_rate_source?: string | null
@@ -353,21 +353,22 @@ watch(() => form.converted_amount, () => {
 // Initialize form data when modal opens or transaction changes
 watch([() => props.isOpen, () => props.transaction], () => {
   if (props.isOpen) {
-    if (props.transaction) {
+    const editingTx = props.transaction
+    if (editingTx) {
       // Edit mode - populate with existing transaction data
       // Use nextTick to ensure proper initialization order
       nextTick(() => {
-        form.account_id = props.transaction.account?.id?.toString() || props.defaultAccountId?.toString() || ''
-        form.type = props.transaction.type || ''
-        form.amount = props.transaction.amount || ''
-        form.description = props.transaction.description || ''
+        form.account_id = editingTx.account?.id?.toString() || props.defaultAccountId?.toString() || ''
+        form.type = editingTx.type || ''
+        form.amount = editingTx.amount || ''
+        form.description = editingTx.description || ''
         // Format the stored datetime for datetime-local input
-        form.transaction_date = formatDateTimeLocal(props.transaction.transaction_date)
-        form.transfer_to_account_id = props.transaction.transfer_to_account?.id?.toString() || ''
+        form.transaction_date = formatDateTimeLocal(editingTx.transaction_date)
+        form.transfer_to_account_id = editingTx.transfer_to_account?.id?.toString() || ''
         // Exchange rate fields
-        form.exchange_rate = props.transaction.exchange_rate?.toString() || ''
-        form.converted_amount = props.transaction.converted_amount?.toString() || ''
-        form.exchange_rate_source = props.transaction.exchange_rate_source || 'manual'
+        form.exchange_rate = editingTx.exchange_rate?.toString() || ''
+        form.converted_amount = editingTx.converted_amount?.toString() || ''
+        form.exchange_rate_source = editingTx.exchange_rate_source || 'manual'
       })
     } else {
       // Create mode - reset form with defaults

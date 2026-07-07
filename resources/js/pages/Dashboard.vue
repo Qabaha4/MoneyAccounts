@@ -16,6 +16,7 @@ import TransactionDetailModal from '@/components/TransactionDetailModal.vue';
 import HeroSection from '@/components/HeroSection.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import DashboardSkeleton from '@/components/DashboardSkeleton.vue';
+import { useFormatting } from '@/composables/useFormatting';
 
 interface Currency {
     id: number;
@@ -60,6 +61,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t } = useI18n();
+const { formatDateTime: fmtDateTime, formatDate: fmtDate, formatAmount, formatCurrency } = useFormatting();
 
 // Mobile detection and collapse state
 const isMobile = ref(false);
@@ -264,14 +266,14 @@ const handleCurrencyChange = (currency: Currency) => {
                 <div class="space-y-4" v-else>
                     <!-- Dashboard Balance Hero -->
                     <HeroSection 
-                        :main-sec-val="`${Number(convertedTotalBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${selectedCurrencySymbol}`"
-                        :main-sec-label="'Total Balance'"
-                        :sub-sec-p1-val="props.accounts.length.toString()"
-                        :sub-sec-p1-label="'Total Wallets'"
-                        :sub-sec-p2-val="props.accounts.filter(account => account.is_active).length.toString()"
-                        :sub-sec-p2-label="'Active Wallets'"
-                        :sub-sec-p3-val="props.recentTransactions.length.toString()"
-                        :sub-sec-p3-label="'Latest Activity'"
+                        :main-sec-val="`${formatAmount(convertedTotalBalance)} ${selectedCurrencySymbol}`"
+                    :main-sec-label="t('dashboard.total_balance')"
+                    :sub-sec-p1-val="props.accounts.length.toString()"
+                    :sub-sec-p1-label="t('dashboard.total_wallets')"
+                    :sub-sec-p2-val="props.accounts.filter(account => account.is_active).length.toString()"
+                    :sub-sec-p2-label="t('dashboard.active_wallets')"
+                    :sub-sec-p3-val="props.recentTransactions.length.toString()"
+                    :sub-sec-p3-label="t('dashboard.latest_activity')"
                         :show-currency-selector="true"
                         :currencies="props.userCurrencies"
                         :selected-currency="selectedCurrency || undefined"
@@ -330,7 +332,7 @@ const handleCurrencyChange = (currency: Currency) => {
                                                 class="text-sm font-bold"
                                                 :class="account.balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'"
                                             >
-                                                {{ account.currency.symbol }}{{ Number(account.balance).toLocaleString() }}
+                                                {{ formatCurrency(account.balance, account.currency) }}
                                             </div>
                                         </div>
                                     </div>
@@ -459,10 +461,10 @@ const handleCurrencyChange = (currency: Currency) => {
                                                         class="text-sm font-bold"
                                                         :class="getTransactionAmountColor(transaction)"
                                                     >
-                                                        {{ getTransactionAmountPrefix(transaction) }}{{ getTransactionCurrency(transaction).symbol }}{{ Number(transaction.amount).toLocaleString() }}
+                                                        {{ getTransactionAmountPrefix(transaction) }}{{ getTransactionCurrency(transaction).symbol }}{{ formatAmount(transaction.amount) }}
                                                     </div>
                                                     <div class="text-xs text-slate-500 dark:text-slate-400">
-                                                        {{ new Date(transaction.transaction_date).toLocaleDateString() }} {{ new Date(transaction.transaction_date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) }}
+                                                        {{ fmtDateTime(transaction.transaction_date) }}
                                                     </div>
                                                 </div>
                                             </div>

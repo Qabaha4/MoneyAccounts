@@ -36,16 +36,16 @@
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <!-- Hero Section -->
         <HeroSection 
-          :main-sec-val="`${Number(totalBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${account.currency.symbol}`"
-          :main-sec-label="'Total Balance'"
+          :main-sec-val="`${formatAmount(totalBalance)} ${account.currency.symbol}`"
+          :main-sec-label="t('dashboard.total_balance')"
           :sub-sec-p1-val="account.name"
-          :sub-sec-p1-label="'Account Name'"
+          :sub-sec-p1-label="t('dashboard.account_name')"
           :sub-sec-p2-val="`${monthlyTransactionsCount}`"
-          :sub-sec-p2-label="'Transactions This Month'"
+          :sub-sec-p2-label="t('dashboard.transactions_this_month')"
           :sub-sec-p3-val="recentTransactionsForHero.length.toString()"
-          :sub-sec-p3-label="'Recent Activity'"
+          :sub-sec-p3-label="t('dashboard.recent_activity')"
           :show-status="true"
-          :status-val="account.is_active ? 'Active' : 'Inactive'"
+          :status-val="account.is_active ? t('accounts.active') : t('accounts.inactive')"
           :show-edit-button="true"
           @edit="openAccountEditModal"
         />
@@ -95,7 +95,7 @@
               <Input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Search transactions..."
+                :placeholder="t('transactions.search_placeholder')"
                 class="pl-10"
               />
             </div>
@@ -181,7 +181,7 @@
                       class="text-base sm:text-lg font-bold"
                       :class="getAmountColor(transaction.type, transaction.is_incoming_transfer)"
                     >
-                      {{ getAmountPrefix(transaction.type, transaction.is_incoming_transfer) }}{{ account.currency.symbol }}{{ getEffectiveAmount(transaction).toLocaleString() }}
+                      {{ getAmountPrefix(transaction.type, transaction.is_incoming_transfer) }}{{ account.currency.symbol }}{{ formatAmount(getEffectiveAmount(transaction)) }}
                     </div>
                     <div class="text-xs text-slate-500 dark:text-slate-400 capitalize">
                       {{ getTransactionLabel(transaction.type, transaction.is_incoming_transfer) }}
@@ -196,6 +196,19 @@
                   </Button>
                 </div>
               </div>
+            </div>
+
+            <!-- Load More -->
+            <div v-if="filteredTransactions.length > 0 && hasMore" class="pt-2">
+              <Button
+                variant="outline"
+                class="w-full"
+                :disabled="loadingMore"
+                @click="loadMoreTransactions"
+              >
+                <Loader2 v-if="loadingMore" class="w-4 h-4 me-2 animate-spin" />
+                {{ loadingMore ? t('transactions.loading') : t('transactions.view_more') }}
+              </Button>
             </div>
 
             <div v-else class="text-center py-12">
@@ -255,13 +268,14 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
-import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, AlertCircle, Search, Printer } from 'lucide-vue-next'
+import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, AlertCircle, Search, Printer, Loader2 } from 'lucide-vue-next'
 import accounts from '@/routes/accounts'
 import transactions from '@/routes/transactions'
 import TransactionModal from '@/components/TransactionModal.vue'
 import AccountFormModal from '@/components/AccountFormModal.vue'
 import HeroSection from '@/components/HeroSection.vue'
 import { type BreadcrumbItem } from '@/types'
+import { useFormatting } from '@/composables/useFormatting'
 
 interface Currency {
   id: number
@@ -305,9 +319,16 @@ const props = defineProps<{
   account: Account
   accounts: Account[]
   currencies: Currency[]
+  transactionsMeta?: {
+    current_page: number
+    per_page: number
+    total: number
+    last_page: number
+  }
 }>()
 
 const { t } = useI18n()
+const { formatDateTime: fmtDateTime, formatAmount } = useFormatting()
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -326,22 +347,28 @@ const isTransactionModalOpen = ref(false)
 const editingTransaction = ref<Transaction | null>(null)
 const isAccountModalOpen = ref(false)
 const searchQuery = ref('')
+const allTransactions = ref<Transaction[]>([])
+const loadingMore = ref(false)
+
+// Initialize accumulated transactions from server prop
+const currentPage = ref(props.transactionsMeta?.current_page ?? 1)
+const hasMore = computed(() => props.transactionsMeta ? currentPage.value < props.transactionsMeta.last_page : false)
 
 // Computed properties for HeroSection component
 const totalBalance = computed(() => props.account.balance)
 const accountsForHero = computed(() => [props.account])
-const recentTransactionsForHero = computed(() => props.account.transactions?.slice(0, 3) || [])
+const recentTransactionsForHero = computed(() => allTransactions.value.slice(0, 3))
 
 // Filtered transactions based on search query
 const filteredTransactions = computed(() => {
-  if (!props.account.transactions) return []
-  
+  if (allTransactions.value.length === 0) return []
+
   if (!searchQuery.value.trim()) {
-    return props.account.transactions
+    return allTransactions.value
   }
-  
+
   const query = searchQuery.value.toLowerCase().trim()
-  return props.account.transactions.filter(transaction => {
+  return allTransactions.value.filter(transaction => {
     return (
       transaction.description?.toLowerCase().includes(query) ||
       transaction.type.toLowerCase().includes(query) ||
@@ -355,15 +382,15 @@ const filteredTransactions = computed(() => {
 
 // Calculate transactions for current month
 const monthlyTransactionsCount = computed(() => {
-  if (!props.account.transactions) return 0
-  
+  if (allTransactions.value.length === 0) return 0
+
   const currentDate = new Date()
   const currentMonth = currentDate.getMonth()
   const currentYear = currentDate.getFullYear()
-  
-  return props.account.transactions.filter(transaction => {
+
+  return allTransactions.value.filter(transaction => {
     const transactionDate = new Date(transaction.transaction_date)
-    return transactionDate.getMonth() === currentMonth && 
+    return transactionDate.getMonth() === currentMonth &&
            transactionDate.getFullYear() === currentYear
   }).length
 })
@@ -434,17 +461,7 @@ const getEffectiveAmount = (transaction: Transaction) => {
 }
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  const dateStr = date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-  const timeStr = date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-  return `${dateStr} ${timeStr}`
+  return fmtDateTime(dateString)
 }
 
 onMounted(() => {
@@ -453,17 +470,44 @@ onMounted(() => {
       handleError('Account data not found')
       return
     }
-    
+
     if (!props.account.currency) {
       handleError('Account currency information is missing')
       return
     }
-    
+
+    // Initialize accumulated transactions with server data
+    allTransactions.value = props.account.transactions || []
+
     error.value = null
   } catch (err) {
     handleError(err instanceof Error ? err.message : 'Failed to load account data')
   }
 })
+
+const loadMoreTransactions = () => {
+  if (loadingMore.value || !hasMore.value) return
+
+  loadingMore.value = true
+  const nextPage = currentPage.value + 1
+
+  router.reload({
+    data: { page: nextPage },
+    only: ['account', 'transactionsMeta'],
+    preserveState: true,
+    preserveScroll: true,
+    onSuccess: () => {
+      // Append new transactions to accumulated list
+      const newTransactions = props.account.transactions || []
+      allTransactions.value = [...allTransactions.value, ...newTransactions]
+      currentPage.value = nextPage
+      loadingMore.value = false
+    },
+    onError: () => {
+      loadingMore.value = false
+    },
+  })
+}
 
 const showAllTransactions = () => {
   router.visit(transactions.index(), {

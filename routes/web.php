@@ -90,12 +90,37 @@ Route::get('dashboard', function () {
 
 // Authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('report', function () {
+        $user = Auth::user();
+        $accounts = \App\Models\Account::with('currency')
+            ->where('user_id', $user->id)
+            ->orderBy('name')
+            ->get();
+
+        $totalBalance = $accounts->sum('balance');
+        $activeCount = $accounts->where('is_active', true)->count();
+        $currenciesCount = $accounts->pluck('currency_id')->unique()->count();
+
+        return Inertia::render('Report/Index', [
+            'accounts' => $accounts,
+            'totalBalance' => number_format($totalBalance, 2, '.', ''),
+            'activeCount' => $activeCount,
+            'currenciesCount' => $currenciesCount,
+        ]);
+    })->name('report.index');
+
     Route::resource('accounts', AccountController::class)->except(['create', 'edit']);
     Route::get('accounts/{account}/report', [App\Http\Controllers\AccountReportController::class, 'show'])->name('accounts.report');
     Route::resource('transactions', TransactionController::class)->except(['create', 'edit', 'show']);
 
     // Global search endpoint
     Route::get('/search', [App\Http\Controllers\SearchController::class, 'search'])->name('search');
+});
+
+// Admin backup download route (within Filament's middleware context)
+Route::middleware(['web', 'auth', \App\Http\Middleware\AdminOnly::class])->prefix('admin')->group(function () {
+    Route::get('/backups/{backup}/download', \App\Http\Controllers\Admin\BackupDownloadController::class)
+        ->name('admin.backups.download');
 });
 
 require __DIR__ . '/settings.php';

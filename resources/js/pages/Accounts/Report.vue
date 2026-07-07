@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-white dark:bg-black transition-colors">
-    <div class="max-w-6xl mx-auto p-4 sm:p-6">
+  <AppLayout :breadcrumbs="breadcrumbs">
+    <div class="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       <!-- Compact Header with Stats -->
-      <Card class="mb-4 border-gray-200 dark:border-gray-800">
+      <Card class="border-gray-200 dark:border-gray-800">
         <CardContent class="p-4">
           <div class="flex justify-between items-start mb-3">
             <div>
@@ -11,16 +11,6 @@
             </div>
             <div class="text-start">
               <p class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(startDate) }} - {{ formatDate(endDate) }}</p>
-              <div class="flex items-center gap-2 mt-1 print:hidden">
-                <select 
-                  v-model="currentLocale" 
-                  @change="changeLocale"
-                  class="text-xs px-2 py-1 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="en">English</option>
-                  <option value="ar">العربية</option>
-                </select>
-              </div>
             </div>
           </div>
           
@@ -63,7 +53,7 @@
       </Card>
 
       <!-- Controls -->
-      <Card class="mb-4 print:hidden border-gray-200 dark:border-gray-800">
+      <Card class="print:hidden border-gray-200 dark:border-gray-800">
         <CardContent class="p-4">
           <div class="flex flex-wrap items-center gap-2 mb-3">
             <div class="flex flex-col gap-1.5">
@@ -128,7 +118,7 @@
       </Card>
 
       <!-- Transaction Details -->
-      <Card class="mb-4 border-gray-200 dark:border-gray-800">
+      <Card class="border-gray-200 dark:border-gray-800">
         <CardHeader class="pb-3">
           <CardTitle class="text-base font-bold text-gray-900 dark:text-gray-100">{{ t('report.transaction_details') }}</CardTitle>
         </CardHeader>
@@ -189,18 +179,20 @@
         </CardContent>
       </Card>
 
-      <!-- Compact Footer -->
-      <div class="mt-4 pt-3 border-t border-gray-300 dark:border-gray-800 text-center text-xs text-gray-600 dark:text-gray-400">
+      <!-- Footer -->
+      <div class="pt-3 border-t border-gray-300 dark:border-gray-800 text-center text-xs text-gray-600 dark:text-gray-400">
         <p>{{ t('report.generated_on') }}: {{ formatDateTime(generatedAt) }}</p>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
+import { useFormatting } from '@/composables/useFormatting'
+import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -208,8 +200,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import DatePicker from '@/components/ui/date-picker/DatePicker.vue'
 import { Printer, ArrowLeft, RefreshCw } from 'lucide-vue-next'
+import { report as reportRoute, show as showAccount } from '@/routes/accounts'
+import type { BreadcrumbItem } from '@/types'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const { formatAmount } = useFormatting()
+
+const breadcrumbs: BreadcrumbItem[] = computed(() => [
+  {
+    title: t('app.report'),
+    href: '/report',
+  },
+  {
+    title: props.account.name,
+    href: reportRoute({ account: props.account.id }).url,
+  },
+])
 
 interface Currency {
   id: number
@@ -282,10 +288,6 @@ const props = defineProps<{
 const localStartDate = ref(props.startDate)
 const localEndDate = ref(props.endDate)
 
-// Get i18n instance at the top level
-const { locale } = useI18n()
-const currentLocale = ref(locale.value)
-
 // Column visibility state
 const visibleColumns = ref({
   date: true,
@@ -294,21 +296,6 @@ const visibleColumns = ref({
   amount: true,
   balance: true
 })
-
-const changeLocale = () => {
-  locale.value = currentLocale.value
-  
-  // Update HTML dir attribute for RTL support
-  document.documentElement.dir = currentLocale.value === 'ar' ? 'rtl' : 'ltr'
-  
-  // Optionally persist to session
-  router.post('/locale', {
-    locale: currentLocale.value
-  }, {
-    preserveState: true,
-    preserveScroll: true,
-  })
-}
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
@@ -328,23 +315,14 @@ const formatDateTime = (dateString: string) => {
   let hours = date.getHours()
   const minutes = String(date.getMinutes()).padStart(2, '0')
   
-  // Determine AM/PM
   const isAM = hours < 12
-  const period = currentLocale.value === 'ar' ? (isAM ? 'ص' : 'م') : (isAM ? 'AM' : 'PM')
+  const period = locale.value === 'ar' ? (isAM ? 'ص' : 'م') : (isAM ? 'AM' : 'PM')
   
-  // Convert to 12-hour format
   hours = hours % 12
-  hours = hours ? hours : 12 // 0 should be 12
+  hours = hours ? hours : 12
   const hoursStr = String(hours).padStart(2, '0')
   
   return `${day}/${month}/${year} ${hoursStr}:${minutes}${period}`
-}
-
-const formatAmount = (amount: number | string) => {
-  return Number(amount).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })
 }
 
 const getTransactionTypeLabel = (transaction: Transaction) => {
@@ -407,7 +385,7 @@ const printReport = () => {
 }
 
 const goBack = () => {
-  router.visit(`/accounts/${props.account.id}`)
+  router.visit(showAccount({ account: props.account.id }).url)
 }
 
 const updateReport = () => {

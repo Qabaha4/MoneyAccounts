@@ -6,7 +6,7 @@
         Transaction Details - {{ transaction?.type?.toUpperCase() }} #{{ transaction?.id }}
       </DialogTitle>
       <DialogDescription class="sr-only">
-        View details for {{ transaction?.type }} transaction of {{ transaction?.account.currency.symbol }}{{ parseFloat(transaction?.amount || '0').toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} on {{ transaction?.transaction_date ? new Date(transaction.transaction_date).toLocaleDateString() : '' }}
+        View details for {{ transaction?.type }} transaction of {{ transaction?.account.currency.symbol }}{{ formatAmount(parseFloat(transaction?.amount || '0')) }} on {{ transaction?.transaction_date ? formatDate(transaction.transaction_date) : '' }}
       </DialogDescription>
       
       <!-- Hero Section with Amount -->
@@ -29,7 +29,7 @@
 
           <!-- Amount -->
           <div class="text-center mb-8">
-            <div class="text-sm text-slate-400 mb-2 font-medium">TRANSACTION AMOUNT</div>
+            <div class="text-sm text-slate-400 mb-2 font-medium">{{ t('transactions.amount').toUpperCase() }}</div>
             <div 
               class="text-5xl font-bold tracking-tight mb-2"
               :class="{
@@ -38,7 +38,7 @@
                 'text-blue-400': transaction?.type === 'transfer'
               }"
             >
-              {{ transaction?.type === 'income' ? '+' : transaction?.type === 'expense' ? '-' : '' }}{{ transaction?.account.currency.symbol }}{{ getEffectiveAmount(transaction).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              {{ transaction?.type === 'income' ? '+' : transaction?.type === 'expense' ? '-' : '' }}{{ transaction?.account.currency.symbol }}{{ formatAmount(getEffectiveAmount(transaction)) }}
             </div>
             <div class="text-sm text-slate-400">
               {{ transaction?.account.currency.code }}
@@ -49,19 +49,11 @@
           <div class="flex items-center justify-center gap-2 text-slate-300">
             <Calendar class="w-4 h-4" />
             <span class="text-sm">
-              {{ transaction?.transaction_date ? new Date(transaction.transaction_date).toLocaleDateString('en-US', { 
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              }) : '' }}
+              {{ transaction?.transaction_date ? formatDateFull(transaction.transaction_date) : '' }}
             </span>
             <span class="text-slate-500">•</span>
             <span class="text-sm font-mono">
-              {{ transaction?.transaction_date ? new Date(transaction.transaction_date).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit'
-              }) : '' }}
+              {{ transaction?.transaction_date ? formatTime(transaction.transaction_date) : '' }}
             </span>
           </div>
         </div>
@@ -189,6 +181,11 @@ import {
   Trash2,
   ExternalLink 
 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+import { useFormatting } from '@/composables/useFormatting'
+
+const { t } = useI18n()
+const { formatAmount, formatDate, formatDateFull, formatTime } = useFormatting()
 
 interface Currency {
   id: number

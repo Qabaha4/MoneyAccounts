@@ -2,9 +2,9 @@
   <Dialog v-model:open="isOpen">
     <DialogContent class="sm:max-w-[500px]">
       <DialogHeader>
-        <DialogTitle>{{ isEditing ? 'Edit Account' : 'Create Account' }}</DialogTitle>
+        <DialogTitle>{{ isEditing ? t('accounts.edit_title') : t('accounts.create_title') }}</DialogTitle>
         <DialogDescription>
-          {{ isEditing ? 'Update your account information.' : 'Create a new account to manage your finances.' }}
+          {{ isEditing ? t('accounts.edit_description') : t('accounts.create_description') }}
         </DialogDescription>
       </DialogHeader>
 
@@ -12,12 +12,12 @@
         <div class="grid gap-4">
           <!-- Account Name -->
           <div class="space-y-2">
-            <Label for="name">Account Name</Label>
+            <Label for="name">{{ t('accounts.name_label') }}</Label>
             <Input
               id="name"
               v-model="form.name"
               type="text"
-              placeholder="Enter account name"
+              :placeholder="t('accounts.name_placeholder')"
               :class="{ 'border-red-500': form.errors.name }"
               required
             />
@@ -26,10 +26,10 @@
 
           <!-- Currency -->
           <div class="space-y-2">
-            <Label for="currency_id">Currency</Label>
+            <Label for="currency_id">{{ t('accounts.currency_label') }}</Label>
             <Select v-model="form.currency_id" required>
               <SelectTrigger :class="{ 'border-red-500': form.errors.currency_id }">
-                <SelectValue placeholder="Select currency" />
+                <SelectValue :placeholder="t('accounts.currency_placeholder')" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem 
@@ -46,18 +46,18 @@
 
           <!-- Account Type -->
           <div class="space-y-2">
-            <Label for="type">Account Type</Label>
+            <Label for="type">{{ t('accounts.type_label') }}</Label>
             <Select v-model="form.type" required>
               <SelectTrigger :class="{ 'border-red-500': form.errors.type }">
-                <SelectValue placeholder="Select account type" />
+                <SelectValue :placeholder="t('accounts.type_placeholder')" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="checking">Checking</SelectItem>
-                <SelectItem value="savings">Savings</SelectItem>
-                <SelectItem value="credit">Credit</SelectItem>
-                <SelectItem value="investment">Investment</SelectItem>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="checking">{{ t('accounts.checking') }}</SelectItem>
+                <SelectItem value="savings">{{ t('accounts.savings') }}</SelectItem>
+                <SelectItem value="credit">{{ t('accounts.credit') }}</SelectItem>
+                <SelectItem value="investment">{{ t('accounts.investment') }}</SelectItem>
+                <SelectItem value="cash">{{ t('accounts.cash') }}</SelectItem>
+                <SelectItem value="other">{{ t('accounts.other') }}</SelectItem>
               </SelectContent>
             </Select>
             <p v-if="form.errors.type" class="text-sm text-red-600">{{ form.errors.type }}</p>
@@ -65,14 +65,14 @@
 
           <!-- Initial Balance (only for create) -->
           <div v-if="!isEditing" class="space-y-2">
-            <Label for="initial_balance">Initial Balance</Label>
+            <Label for="initial_balance">{{ t('accounts.initial_balance_label') }}</Label>
             <Input
               id="initial_balance"
               v-model="form.initial_balance"
               type="number"
               step="0.01"
               min="0"
-              placeholder="0.00"
+              :placeholder="t('accounts.initial_balance_placeholder')"
               :class="{ 'border-red-500': form.errors.initial_balance }"
             />
             <p v-if="form.errors.initial_balance" class="text-sm text-red-600">{{ form.errors.initial_balance }}</p>
@@ -80,24 +80,24 @@
 
           <!-- Current Balance (read-only for edit) -->
           <div v-if="isEditing && account" class="space-y-2">
-            <Label>Current Balance</Label>
+            <Label>{{ t('accounts.current_balance') }}</Label>
             <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
               <span class="text-lg font-semibold" :class="account.balance >= 0 ? 'text-green-600' : 'text-red-600'">
-                {{ account.currency.symbol }}{{ Number(account.balance).toLocaleString() }}
+                {{ account.currency.symbol }}{{ formatAmount(account.balance) }}
               </span>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              Balance is automatically calculated from transactions
+              {{ t('accounts.balance_auto_calc') }}
             </p>
           </div>
 
           <!-- Active Status -->
-          <div class="flex items-center space-x-2">
+          <div dir="ltr" class="flex rtl:justify-end items-center space-x-2 ">
             <Switch
               id="is_active"
               v-model="form.is_active"
             />
-            <Label for="is_active">Active Account</Label>
+            <Label for="is_active">{{ t('accounts.active_account') }}</Label>
           </div>
         </div>
 
@@ -140,6 +140,7 @@
 import { computed, watch, ref } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
+import { useFormatting } from '@/composables/useFormatting'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -151,6 +152,7 @@ import accountRoutes from '@/routes/accounts'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 const { t } = useI18n()
+const { formatAmount } = useFormatting()
 
 interface Currency {
   id: number
@@ -238,23 +240,8 @@ watch(isOpen, (open) => {
   }
 })
 
-// Debug watcher for is_active changes
-watch(() => form.is_active, (newValue, oldValue) => {
-  console.log('is_active changed:', { oldValue, newValue })
-})
-
 const submit = () => {
   if (isEditing.value && props.account) {
-    // Update existing account
-    console.log('Updating account with form data:', {
-      name: form.name,
-      currency_id: form.currency_id,
-      type: form.type,
-      is_active: form.is_active,
-      is_active_type: typeof form.is_active,
-      initial_balance: form.initial_balance
-    })
-    console.log('Full form data object:', form.data())
     form.put(accountRoutes.update(props.account.id).url, {
       onSuccess: () => {
         closeModal()
@@ -262,16 +249,6 @@ const submit = () => {
       }
     })
   } else {
-    // Create new account
-    console.log('Creating account with form data:', {
-      name: form.name,
-      currency_id: form.currency_id,
-      type: form.type,
-      is_active: form.is_active,
-      is_active_type: typeof form.is_active,
-      initial_balance: form.initial_balance
-    })
-    console.log('Full form data object:', form.data())
     form.post(accountRoutes.store().url, {
       onSuccess: () => {
         closeModal()

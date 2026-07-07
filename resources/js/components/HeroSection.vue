@@ -86,7 +86,7 @@ const isNegativeBalance = computed(() => {
                 size="sm"
                 @click="emit('edit')"
                 class="h-8 w-8 p-0 text-slate-300 hover:text-white hover:bg-white/10 transition-colors relative z-10"
-                title="Edit Account"
+                :title="t('accounts.edit')"
             >
                 <Edit class="w-4 h-4" />
             </Button>

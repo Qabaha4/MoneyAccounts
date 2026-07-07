@@ -8,7 +8,7 @@
         <div class="flex items-center gap-2">
           <Button variant="outline" size="sm" @click="toggleView" class="h-9">
             <component :is="viewMode === 'grid' ? List : Grid" class="w-4 h-4 sm:me-2" />
-            <span class="hidden sm:inline">{{ viewMode === 'grid' ? 'List' : 'Grid' }}</span>
+                <span class="hidden sm:inline">{{ viewMode === 'grid' ? t('transactions.list_view') : t('transactions.grid_view') }}</span>
           </Button>
           <Button size="sm" @click="openCreateModal" class="h-9 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
             <Plus class="w-4 h-4 sm:me-2" />
@@ -27,23 +27,23 @@
             <div class="flex-shrink-0 w-40 snap-start">
               <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 text-white shadow-lg">
                 <TrendingUp class="w-5 h-5 mb-2 opacity-90" />
-                <div class="text-xs font-medium opacity-90 mb-1">Income</div>
-                <div class="text-xl font-bold">+${{ totalIncome.toFixed(2) }}</div>
+                <div class="text-xs font-medium opacity-90 mb-1">{{ t('transactions.total_income') }}</div>
+                <div class="text-xl font-bold">+{{ formatAmount(totalIncome) }}</div>
               </div>
             </div>
             
             <div class="flex-shrink-0 w-40 snap-start">
               <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-4 text-white shadow-lg">
                 <TrendingDown class="w-5 h-5 mb-2 opacity-90" />
-                <div class="text-xs font-medium opacity-90 mb-1">Expenses</div>
-                <div class="text-xl font-bold">-${{ totalExpenses.toFixed(2) }}</div>
+                <div class="text-xs font-medium opacity-90 mb-1">{{ t('transactions.total_expenses') }}</div>
+                <div class="text-xl font-bold">-{{ formatAmount(totalExpenses) }}</div>
               </div>
             </div>
             
             <div class="flex-shrink-0 w-40 snap-start">
               <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white shadow-lg">
                 <ArrowUpDown class="w-5 h-5 mb-2 opacity-90" />
-                <div class="text-xs font-medium opacity-90 mb-1">Transfers</div>
+                <div class="text-xs font-medium opacity-90 mb-1">{{ t('transactions.transfers_count') }}</div>
                 <div class="text-xl font-bold">{{ totalTransfers }}</div>
               </div>
             </div>
@@ -51,8 +51,8 @@
             <div class="flex-shrink-0 w-40 snap-start">
               <div class="bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl p-4 text-white shadow-lg">
                 <DollarSign class="w-5 h-5 mb-2 opacity-90" />
-                <div class="text-xs font-medium opacity-90 mb-1">Net Balance</div>
-                <div class="text-xl font-bold">{{ netBalance >= 0 ? '+' : '' }}${{ netBalance.toFixed(2) }}</div>
+                <div class="text-xs font-medium opacity-90 mb-1">{{ t('transactions.net_balance') }}</div>
+                <div class="text-xl font-bold">{{ netBalance >= 0 ? '+' : '' }}{{ formatAmount(netBalance) }}</div>
               </div>
             </div>
           </div>
@@ -61,34 +61,34 @@
           <div class="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 text-white shadow-lg hover:shadow-xl transition-shadow">
               <div class="flex items-center justify-between mb-3">
-                <div class="text-sm font-medium opacity-90">Total Income</div>
-                <TrendingUp class="w-5 h-5 opacity-90" />
-              </div>
-              <div class="text-2xl font-bold">+${{ totalIncome.toFixed(2) }}</div>
+                <div class="text-sm font-medium opacity-90">{{ t('transactions.total_income') }}</div>
+                  <TrendingUp class="w-5 h-5 opacity-90" />
+                </div>
+                <div class="text-2xl font-bold">+{{ formatAmount(totalIncome) }}</div>
             </div>
             
             <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-5 text-white shadow-lg hover:shadow-xl transition-shadow">
               <div class="flex items-center justify-between mb-3">
-                <div class="text-sm font-medium opacity-90">Total Expenses</div>
-                <TrendingDown class="w-5 h-5 opacity-90" />
-              </div>
-              <div class="text-2xl font-bold">-${{ totalExpenses.toFixed(2) }}</div>
+                <div class="text-sm font-medium opacity-90">{{ t('transactions.total_expenses') }}</div>
+                  <TrendingDown class="w-5 h-5 opacity-90" />
+                </div>
+                <div class="text-2xl font-bold">-{{ formatAmount(totalExpenses) }}</div>
             </div>
             
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg hover:shadow-xl transition-shadow">
               <div class="flex items-center justify-between mb-3">
-                <div class="text-sm font-medium opacity-90">Transfers</div>
-                <ArrowUpDown class="w-5 h-5 opacity-90" />
-              </div>
-              <div class="text-2xl font-bold">{{ totalTransfers }}</div>
+                <div class="text-sm font-medium opacity-90">{{ t('transactions.transfers_count') }}</div>
+                  <ArrowUpDown class="w-5 h-5 opacity-90" />
+                </div>
+                <div class="text-2xl font-bold">{{ totalTransfers }}</div>
             </div>
             
             <div class="bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl p-5 text-white shadow-lg hover:shadow-xl transition-shadow">
               <div class="flex items-center justify-between mb-3">
-                <div class="text-sm font-medium opacity-90">Net Balance</div>
-                <DollarSign class="w-5 h-5 opacity-90" />
-              </div>
-              <div class="text-2xl font-bold">{{ netBalance >= 0 ? '+' : '' }}${{ netBalance.toFixed(2) }}</div>
+                <div class="text-sm font-medium opacity-90">{{ t('transactions.net_balance') }}</div>
+                  <DollarSign class="w-5 h-5 opacity-90" />
+                </div>
+                <div class="text-2xl font-bold">{{ netBalance >= 0 ? '+' : '' }}{{ formatAmount(netBalance) }}</div>
             </div>
           </div>
         </div>
@@ -99,12 +99,12 @@
             <div class="flex items-center justify-between mb-3 cursor-pointer" @click="toggleFilters">
               <div class="flex items-center gap-2">
                 <Filter class="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  Filters
-                  <Badge v-if="activeFiltersCount > 0" variant="secondary" class="ms-2 text-xs px-2 py-0.5">
-                    {{ activeFiltersCount }}
-                  </Badge>
-                </span>
+                  <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {{ t('transactions.filters_title') }}
+                    <Badge v-if="activeFiltersCount > 0" variant="secondary" class="ms-2 text-xs px-2 py-0.5">
+                      {{ activeFiltersCount }}
+                    </Badge>
+                  </span>
               </div>
               <Button variant="ghost" size="sm" class="h-7 w-7 p-0">
                 <component :is="filtersExpanded ? ChevronUp : ChevronDown" class="w-4 h-4" />
@@ -118,7 +118,7 @@
                 <Input
                   ref="searchInputRef"
                   v-model="filterForm.search"
-                  placeholder="Search transactions..."
+                  :placeholder="t('transactions.search_placeholder')"
                   class="pl-9 h-9 text-sm"
                   @input="debounceSearch"
                 />
@@ -127,17 +127,17 @@
               <!-- Filters Grid -->
               <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <div>
-                  <Label class="text-xs font-medium mb-1.5 block">Account</Label>
+                  <Label class="text-xs font-medium mb-1.5 block">{{ t('transactions.account_filter') }}</Label>
                   <Select 
                     :key="`account-${filterForm.account_id}`"
                     v-model="filterForm.account_id" 
                     @update:model-value="applyFilters"
                   >
                     <SelectTrigger class="h-9 text-sm">
-                      <SelectValue placeholder="All accounts" />
+                      <SelectValue :placeholder="t('transactions.all_accounts')" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All accounts</SelectItem>
+                      <SelectItem value="all">{{ t('transactions.all_accounts') }}</SelectItem>
                       <SelectItem 
                         v-for="account in accounts" 
                         :key="account.id" 
@@ -150,26 +150,26 @@
                 </div>
                 
                 <div>
-                  <Label class="text-xs font-medium mb-1.5 block">Type</Label>
+                  <Label class="text-xs font-medium mb-1.5 block">{{ t('transactions.type_filter') }}</Label>
                   <Select 
                     :key="`type-${filterForm.type}`"
                     v-model="filterForm.type" 
                     @update:model-value="applyFilters"
                   >
                     <SelectTrigger class="h-9 text-sm">
-                      <SelectValue placeholder="All types" />
+                      <SelectValue :placeholder="t('transactions.all_types')" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All types</SelectItem>
-                      <SelectItem value="income">Income</SelectItem>
-                      <SelectItem value="expense">Expense</SelectItem>
-                      <SelectItem value="transfer">Transfer</SelectItem>
+                      <SelectItem value="all">{{ t('transactions.all_types') }}</SelectItem>
+                      <SelectItem value="income">{{ t('transactions.income') }}</SelectItem>
+                      <SelectItem value="expense">{{ t('transactions.expense') }}</SelectItem>
+                      <SelectItem value="transfer">{{ t('transactions.transfer') }}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
-                  <Label class="text-xs font-medium mb-1.5 block">Sort By</Label>
+                  <Label class="text-xs font-medium mb-1.5 block">{{ t('transactions.sort_by') }}</Label>
                   <Select 
                     :key="`sort-${filterForm.sort_by}`"
                     v-model="filterForm.sort_by" 
@@ -179,16 +179,18 @@
                       <SelectValue :placeholder="getSortLabel(filterForm.sort_by)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="transaction_date_desc">Newest first</SelectItem>
-                      <SelectItem value="transaction_date_asc">Oldest first</SelectItem>
-                      <SelectItem value="amount_desc">Highest amount</SelectItem>
-                      <SelectItem value="amount_asc">Lowest amount</SelectItem>
+                      <SelectItem value="transaction_date_desc">{{ t('transactions.sort_date_desc') }}</SelectItem>
+                      <SelectItem value="transaction_date_asc">{{ t('transactions.sort_date_asc') }}</SelectItem>
+                      <SelectItem value="amount_desc">{{ t('transactions.sort_amount_desc') }}</SelectItem>
+                      <SelectItem value="amount_asc">{{ t('transactions.sort_amount_asc') }}</SelectItem>
+                      <SelectItem value="type_asc">{{ t('transactions.sort_type_asc') }}</SelectItem>
+                      <SelectItem value="description_asc">{{ t('transactions.sort_description_asc') }}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
-                  <Label class="text-xs font-medium mb-1.5 block">From Date</Label>
+                  <Label class="text-xs font-medium mb-1.5 block">{{ t('transactions.date_from') }}</Label>
                   <DatePicker 
                     v-model="filterForm.date_from" 
                     @update:model-value="applyFilters"
@@ -198,7 +200,7 @@
                 </div>
                 
                 <div>
-                  <Label class="text-xs font-medium mb-1.5 block">To Date</Label>
+                  <Label class="text-xs font-medium mb-1.5 block">{{ t('transactions.date_to') }}</Label>
                   <DatePicker 
                     v-model="filterForm.date_to" 
                     @update:model-value="applyFilters"
@@ -210,7 +212,7 @@
                 <div class="flex items-end">
                   <Button variant="outline" @click="clearFilters" class="w-full h-9 text-sm">
                     <X class="w-4 h-4 me-1.5" />
-                    Clear
+                    {{ t('transactions.clear_filters') }}
                   </Button>
                 </div>
               </div>
@@ -452,7 +454,7 @@
                       class="text-base sm:text-lg font-bold"
                       :class="getAmountColor(transaction.type, transaction.is_incoming_transfer)"
                     >
-                      {{ getAmountPrefix(transaction.type, transaction.is_incoming_transfer) }}{{ transaction.account.currency.symbol }}{{ Number(transaction.amount).toLocaleString() }}
+                  {{ getAmountPrefix(transaction.type, transaction.is_incoming_transfer) }}{{ transaction.account.currency.symbol }}{{ formatAmount(transaction.amount) }}
                     </div>
                     <div class="text-xs text-slate-500 dark:text-slate-400 sm:hidden mt-0.5">
                       {{ formatDate(transaction.transaction_date) }}
@@ -475,7 +477,7 @@
               >
                 <LoadingSpinner v-if="isLoading" class="w-4 h-4" />
                 <ChevronLeft v-else class="w-4 h-4" />
-                <span class="hidden sm:inline ms-1">Previous</span>
+                <span class="hidden sm:inline ms-1">{{ t('transactions.previous') }}</span>
               </Button>
               
               <div class="flex gap-1">
@@ -501,7 +503,7 @@
                 :disabled="transactions.current_page === transactions.last_page || isLoading"
                 class="h-9"
               >
-                <span class="hidden sm:inline me-1">Next</span>
+                <span class="hidden sm:inline me-1">{{ t('transactions.next') }}</span>
                 <LoadingSpinner v-if="isLoading" class="w-4 h-4" />
                 <ChevronRight v-else class="w-4 h-4" />
               </Button>
@@ -517,17 +519,17 @@
                 <Receipt class="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />
               </div>
               <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-2 sm:mb-3">
-                {{ hasActiveFilters ? 'No matching transactions' : 'No transactions yet' }}
+                {{ hasActiveFilters ? t('transactions.no_matching') : t('transactions.no_transactions') }}
               </h3>
               <p class="text-sm text-slate-600 dark:text-slate-400 mb-4 sm:mb-6">
                 {{ hasActiveFilters 
-                   ? 'Try adjusting your filters to see more transactions.' 
-                   : 'Get started by creating your first transaction.' }}
+                   ? t('transactions.no_matching_description')
+                   : t('transactions.empty_description') }}
               </p>
               <div class="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button v-if="hasActiveFilters" variant="outline" @click="clearFilters" class="h-10">
                   <X class="w-4 h-4 me-2" />
-                  Clear Filters
+                  {{ t('transactions.clear_filters') }}
                 </Button>
               </div>
             </div>
@@ -571,6 +573,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DatePicker } from '@/components/ui/date-picker'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import TransactionSkeleton from '@/components/TransactionSkeleton.vue'
+import { useFormatting } from '@/composables/useFormatting'
 import { 
   Receipt, Plus, Search, Filter, X, Grid, List, MoreHorizontal,
   TrendingUp, TrendingDown, ArrowUpDown, DollarSign,
@@ -627,6 +630,7 @@ interface Props {
 
 const props = defineProps<Props>()
 const { t } = useI18n()
+const { formatAmount } = useFormatting()
 
 const viewMode = ref<'grid' | 'list'>('list')
 const searchTimeout = ref<number | null>(null)
@@ -974,7 +978,7 @@ const handleEditTransaction = (transaction: Transaction) => {
 }
 
 const handleDeleteTransaction = async (transaction: Transaction) => {
-  if (!confirm('Are you sure you want to delete this transaction?')) {
+  if (!confirm(t('transactions.confirm_delete'))) {
     return
   }
   
