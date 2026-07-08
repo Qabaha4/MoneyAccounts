@@ -2,7 +2,7 @@
   <AppLayout :title="t('accounts.title')">
     <template #header>
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+        <h2 class="font-semibold text-xl text-foreground leading-tight">
           {{ t('accounts.title') }}
         </h2>
         <Button
@@ -22,8 +22,8 @@
           <CardContent class="p-4">
             <div class="flex items-center justify-between mb-3 cursor-pointer" @click="toggleFilters">
               <div class="flex items-center gap-2">
-                <Filter class="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                <Filter class="w-4 h-4 text-muted-foreground" />
+                  <span class="text-sm font-semibold text-foreground">
                   {{ t('accounts.filter') }}
                   <Badge v-if="activeFiltersCount > 0" variant="secondary" class="ms-2 text-xs px-2 py-0.5">
                     {{ activeFiltersCount }}
@@ -38,7 +38,7 @@
             <div v-if="filtersExpanded" class="space-y-3 pt-3 border-t">
               <!-- Search -->
               <div class="relative">
-                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   v-model="filterForm.search"
                   :placeholder="t('accounts.search_placeholder')"
@@ -147,7 +147,7 @@
                 <Badge
                   v-if="filterForm.type !== 'all'"
                   variant="secondary"
-                  class="flex items-center gap-1 text-xs px-2 py-1 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  class="flex items-center gap-1 text-xs px-2 py-1 cursor-pointer hover:bg-accent/50 transition-colors"
                   @click="clearTypeFilter"
                 >
                   {{ getTypeLabel(filterForm.type) }}
@@ -156,7 +156,7 @@
                 <Badge
                   v-if="filterForm.currency_id !== 'all'"
                   variant="secondary"
-                  class="flex items-center gap-1 text-xs px-2 py-1 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  class="flex items-center gap-1 text-xs px-2 py-1 cursor-pointer hover:bg-accent/50 transition-colors"
                   @click="clearCurrencyFilter"
                 >
                   {{ getCurrencyName(filterForm.currency_id) }}
@@ -165,7 +165,7 @@
                 <Badge
                   v-if="filterForm.status !== 'all'"
                   variant="secondary"
-                  class="flex items-center gap-1 text-xs px-2 py-1 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  class="flex items-center gap-1 text-xs px-2 py-1 cursor-pointer hover:bg-accent/50 transition-colors"
                   @click="clearStatusFilter"
                 >
                   {{ filterForm.status === 'active' ? t('accounts.active') : t('accounts.inactive') }}
@@ -174,7 +174,7 @@
                 <Badge
                   v-if="filterForm.search.trim()"
                   variant="secondary"
-                  class="flex items-center gap-1 text-xs px-2 py-1 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  class="flex items-center gap-1 text-xs px-2 py-1 cursor-pointer hover:bg-accent/50 transition-colors"
                   @click="clearSearchFilter"
                 >
                   "{{ filterForm.search.trim() }}"
@@ -195,100 +195,78 @@
           <Card 
             v-for="account in props.accounts" 
             :key="account.id" 
-            class="overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group h-fit max-h-[350px] flex flex-col cursor-pointer"
+            class="overflow-hidden hover:bg-accent/30 transition-all duration-200 group h-fit flex flex-col cursor-pointer border border-border/50"
             @click="$inertia.visit(accountRoutes.show(account.id).url)"
           >
-            <!-- Header with Type and Currency -->
-            <div class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-3 py-1.5 flex-shrink-0">
-              <div class="absolute inset-0 bg-grid-white/[0.02] bg-[size:12px_12px]"></div>
-              
-              <div class="relative flex items-center justify-between">
-                <!-- Account Type -->
-                <div class="flex items-center gap-1 text-slate-300">
-                  <component :is="getTypeIcon(account.type)" class="w-3 h-3 flex-shrink-0" />
-                  <span class="text-xs capitalize truncate">
-                    {{ getTypeLabel(account.type) }}
-                  </span>
-                </div>
-
-                <!-- Currency and Action Buttons -->
-                <div class="flex items-center gap-2 flex-shrink-0">
-                  <div class="text-xs text-slate-400 font-mono">
-                    {{ account.currency.symbol }}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    @click.stop="openPrintReport(account.id)"
-                    class="h-6 w-6 p-0 text-slate-300 hover:text-white hover:bg-white/10"
-                    :title="t('accounts.print_report')"
-                  >
-                    <Printer class="w-3 h-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    @click.stop="openEditModal(account)"
-                    class="h-6 w-6 p-0 text-slate-300 hover:text-white hover:bg-white/10"
-                  >
-                    <Edit class="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <!-- Gradient accent strip -->
+            <div class="h-1.5 w-full" :class="getAccountTypeStyle(account.type).gradientClass"></div>
 
             <!-- Body with Account Name and Balance -->
-            <div class="px-3 py-4 flex-1 flex flex-col justify-center">
+            <div class="p-4 flex-1 flex flex-col justify-center">
               <div class="flex items-center justify-between gap-4">
-                <!-- Account Name -->
+                <!-- Account Info -->
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
-                    <div class="w-0.5 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      {{ t('accounts.name') }}
+                  <div class="flex items-center gap-2 mb-2">
+                    <div class="w-6 h-6 rounded-lg flex items-center justify-center"
+                         :class="getAccountTypeStyle(account.type).gradientClass">
+                      <component :is="getAccountTypeStyle(account.type).icon" class="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <span class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      {{ getTypeLabel(account.type) }}
                     </span>
                   </div>
-                  <div class="ps-2 flex items-center">
-                    <div class="flex items-center gap-2 min-w-0 flex-1">
-                      <div class="w-5 h-5 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center flex-shrink-0">
-                        <span class="text-xs font-bold text-white">A</span>
-                      </div>
-                      <div class="min-w-0 flex-1">
-                        <div class="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                          {{ account.name }}
-                        </div>
-                      </div>
+                  <div class="flex items-center gap-2">
+                    <div class="text-base font-semibold text-foreground truncate">
+                      {{ account.name }}
                     </div>
                   </div>
                 </div>
 
                 <!-- Balance -->
-                <div class="flex-shrink-0">
-                  <div class="flex items-center gap-2 mb-1 justify-end">
-                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      {{ t('accounts.balance') }}
-                    </span>
-                    <div class="w-0.5 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
+                <div class="flex-shrink-0 text-right">
+                  <div class="text-xs font-medium text-muted-foreground mb-1">
+                    {{ t('accounts.balance') }}
                   </div>
-                  <div class="pe-2 flex items-center justify-end">
-                    <div class="flex items-center gap-2">
-                      <div class="min-w-0">
-                        <div 
-                          class="text-sm font-semibold text-right"
-                          :class="{
-                            'text-emerald-600 dark:text-emerald-400': account.balance >= 0,
-                            'text-red-600 dark:text-red-400': account.balance < 0
-                          }"
-                        >
-                          {{ formatCurrency(account.balance, account.currency) }}
-                        </div>
-                      </div>
-                      <div class="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                        <span class="text-xs font-bold text-white">{{ account.currency.symbol }}</span>
-                      </div>
-                    </div>
+                  <div 
+                    class="text-lg font-bold"
+                    :class="account.balance >= 0 ? 'text-success' : 'text-destructive'"
+                  >
+                    {{ formatCurrency(account.balance, account.currency) }}
                   </div>
                 </div>
+              </div>
+            </div>
+            <!-- Footer with Actions -->
+            <div class="px-4 py-2 border-t border-border/50 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <Badge class="gradient-brand text-white text-xs px-2 py-0.5 rounded-lg border-0">
+                  {{ account.currency.code }}
+                </Badge>
+                <Badge 
+                  variant="secondary"
+                  class="text-xs px-2 py-0.5"
+                >
+                  {{ account.is_active ? t('common.active') : t('common.inactive') }}
+                </Badge>
+              </div>
+              <div class="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  @click.stop="openPrintReport(account.id)"
+                  class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                  :title="t('accounts.print_report')"
+                >
+                  <Printer class="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  @click.stop="openEditModal(account)"
+                  class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                >
+                  <Edit class="w-3.5 h-3.5" />
+                </Button>
               </div>
             </div>
           </Card>
@@ -297,13 +275,13 @@
         <!-- Empty State -->
         <div v-else-if="!isLoading && !isRefreshing" class="flex items-center justify-center py-16">
           <div class="text-center py-8 px-4">
-            <div class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 dark:bg-gray-800/80 rounded-full flex items-center justify-center mb-4 dark:border dark:border-gray-700">
-              <component :is="hasActiveFilters ? Search : Wallet" class="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+            <div class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-secondary/50 rounded-full flex items-center justify-center mb-4">
+              <component :is="hasActiveFilters ? Search : Wallet" class="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
             </div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+            <h3 class="text-lg font-medium text-foreground mb-2">
               {{ hasActiveFilters ? t('accounts.no_accounts_found') : t('dashboard.no_accounts') }}
             </h3>
-            <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto text-sm">
+            <p class="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
               {{ hasActiveFilters ? t('accounts.no_accounts_match', { query: filterForm.search || '' }) : t('dashboard.get_started_account') }}
             </p>
             <div class="flex flex-col sm:flex-row gap-3 justify-center">
@@ -343,6 +321,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus as PlusIcon, Eye, Edit, Wallet, Search, Printer, Landmark, PiggyBank, CreditCard, TrendingUp, Banknote, MoreHorizontal, Filter, X, ChevronDown, ChevronUp } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useFormatting } from '@/composables/useFormatting'
+import { useAccountType } from '@/composables/useAccountType'
 import accountRoutes from '@/routes/accounts'
 import AccountFormModal from '@/components/AccountFormModal.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -350,6 +329,7 @@ import AccountSkeleton from '@/components/AccountSkeleton.vue'
 
 const { t } = useI18n()
 const { formatCurrency } = useFormatting()
+const { getAccountTypeStyle } = useAccountType()
 interface Currency {
   id: number
   code: string

@@ -8,7 +8,8 @@
     "settings": "Settings",
     "report": "Report",
     "github_repo": "Github Repo",
-    "developer": "Developer"
+    "developer": "Developer",
+    "admin": "Admin"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -44,7 +45,13 @@
     "account_stats": "Account Statistics",
     "transaction_history": "Transaction History",
     "recent": "Recent",
-    "view_all_transactions": "View All Transactions"
+    "view_all_transactions": "View All Transactions",
+    "all_accounts": "All Accounts",
+    "top_balances": "Top Balances",
+    "highest_first": "highest first",
+    "last_transaction": "last transaction",
+    "total_count": "{count} total",
+    "recent_count": "{count} recent"
   },
   "accounts": {
     "title": "Accounts",
@@ -227,7 +234,10 @@
     "no_description": "No description",
     "from": "From",
     "to": "To",
-    "view_report": "View Report"
+    "view_report": "View Report",
+    "total_transactions": "Total Transactions",
+    "opening": "Opening",
+    "closing": "Closing"
   },
   "settings": {
     "title": "Settings",
@@ -312,6 +322,21 @@
     "password_placeholder": "Password",
     "cancel": "Cancel",
     "confirm_delete": "Delete account"
+  },
+  "search": {
+    "title": "Search Accounts & Transactions",
+    "placeholder": "Search accounts, transactions, descriptions...",
+    "searching": "Searching...",
+    "no_results": "No results found for \"{query}\"",
+    "no_results_hint": "Try searching for account names or transaction descriptions",
+    "accounts_section": "Accounts ({count})",
+    "transactions_section": "Transactions ({count})",
+    "empty_title": "Start typing to search accounts and transactions",
+    "empty_hint": "Use ↑↓ to navigate, Enter to select, Esc to close",
+    "trigger": "Search...",
+    "dialog_description": "Search through your accounts and transactions. Use the search field to find specific items, then click on any result to view details.",
+    "accounts_group": "Accounts",
+    "transactions_group": "Transactions"
   },
   "common": {
     "save": "Save",

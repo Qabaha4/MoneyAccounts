@@ -11,7 +11,7 @@ interface Currency {
 export function useFormatting() {
   const { locale } = useI18n()
 
-  const currentLocale = computed(() => locale.value === 'ar' ? 'ar-SA' : 'en-US')
+  const currentLocale = computed(() => locale.value === 'ar' ? 'ar-SA-u-nu-latn' : 'en-US')
 
   function formatCurrency(amount: number, currency: Currency): string {
     return new Intl.NumberFormat(currentLocale.value, {

@@ -94,6 +94,12 @@ class TransactionController extends Controller
                 break;
         }
 
+        // Compute stats from all filtered results (before pagination)
+        $allFiltered = (clone $baseQuery)->get();
+        $totalIncome = $allFiltered->where('type', 'income')->sum('amount');
+        $totalExpenses = $allFiltered->where('type', 'expense')->sum('amount');
+        $totalTransfers = $allFiltered->where('type', 'transfer')->count();
+
         // Get paginated results
         $transactions = $baseQuery->paginate(20);
 
@@ -113,6 +119,11 @@ class TransactionController extends Controller
             'transactions' => $transactions,
             'accounts' => $accounts,
             'filters' => $request->only(['account_id', 'type', 'search', 'sort_by', 'date_from', 'date_to']),
+            'stats' => [
+                'total_income' => $totalIncome,
+                'total_expenses' => $totalExpenses,
+                'total_transfers' => $totalTransfers,
+            ],
         ]);
     }
 

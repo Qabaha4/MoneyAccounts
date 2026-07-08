@@ -81,12 +81,12 @@
           <!-- Current Balance (read-only for edit) -->
           <div v-if="isEditing && account" class="space-y-2">
             <Label>{{ t('accounts.current_balance') }}</Label>
-            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-              <span class="text-lg font-semibold" :class="account.balance >= 0 ? 'text-green-600' : 'text-red-600'">
+            <div class="p-3 bg-muted rounded-lg border border-border/50">
+              <span class="text-lg font-semibold" :class="account.balance >= 0 ? 'text-success' : 'text-destructive'">
                 {{ account.currency.symbol }}{{ formatAmount(account.balance) }}
               </span>
             </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">
+            <p class="text-sm text-muted-foreground">
               {{ t('accounts.balance_auto_calc') }}
             </p>
           </div>
@@ -108,7 +108,7 @@
             type="button" 
             @click="confirmDelete"
             :disabled="deleting || form.processing"
-            class="transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <LoadingSpinner v-if="deleting" class="w-4 h-4 me-2" />
             <Trash2 v-else class="w-4 h-4 me-2" />
@@ -120,7 +120,7 @@
             <Button 
               type="submit" 
               :disabled="form.processing || deleting"
-              class="transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <LoadingSpinner v-if="form.processing" class="w-4 h-4 me-2" />
               <Save v-else-if="isEditing" class="w-4 h-4 me-2" />

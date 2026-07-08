@@ -28,13 +28,13 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            // ->login()
             ->brandName('MoneyAccounts Admin')
-            ->brandLogo(asset('images/logo.svg'))
+            ->brandLogo(asset('apple-touch-icon.svg'))
             ->brandLogoHeight('2rem')
-            ->favicon(asset('favicon.svg'))
+            ->favicon(asset('apple-touch-icon.svg'))
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Violet,
                 // 'danger' => Color::Red,
                 // 'gray' => Color::Slate,
                 // 'info' => Color::Blue,
@@ -76,10 +76,7 @@ class AdminPanelProvider extends PanelProvider
                     ->label('Profile')
                     ->url(fn(): string => route('filament.admin.auth.profile'))
                     ->icon('heroicon-m-user-circle'),
-                'logout' => \Filament\Navigation\MenuItem::make()
-                    ->label('Logout')
-                    ->url(fn(): string => route('filament.admin.auth.logout'))
-                    ->icon('heroicon-m-arrow-left-on-rectangle'),
+
             ])
             // ->navigationGroups([
             //     'System Management' => \Filament\Navigation\NavigationGroup::make()

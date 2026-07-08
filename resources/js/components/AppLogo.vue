@@ -4,7 +4,7 @@ import { Wallet } from 'lucide-vue-next';
 
 <template>
     <div
-        class="flex aspect-square size-8 items-center justify-center rounded-md bg-gradient-to-br from-blue-500 to-purple-600"
+        class="flex aspect-square size-8 items-center justify-center rounded-md bg-primary"
     >
         <Wallet class="w-5 h-5 text-white" />
     </div>

@@ -69,10 +69,10 @@
           </div>
 
           <!-- Currency Conversion (only for cross-currency transfers) -->
-          <div v-if="isCrossCurrencyTransfer" class="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div v-if="isCrossCurrencyTransfer" class="space-y-4 p-4 bg-secondary/50 rounded-lg border border-border/50">
             <div class="flex items-center gap-2">
-              <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span class="text-sm font-semibold text-blue-700 dark:text-blue-300">Currency Conversion</span>
+              <div class="w-2 h-2 bg-ring rounded-full"></div>
+              <span class="text-sm font-semibold text-foreground">Currency Conversion</span>
             </div>
             
             <div class="grid gap-4">
@@ -80,7 +80,7 @@
               <div class="space-y-2">
                 <Label for="exchange_rate">Exchange Rate</Label>
                 <div class="flex items-center gap-2">
-                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                  <span class="text-sm text-muted-foreground">
                     {{ sourceCurrency?.symbol || '' }} 1 = {{ destinationCurrency?.symbol || '' }}
                   </span>
                   <Input
@@ -101,7 +101,7 @@
               <div class="space-y-2">
                 <Label for="converted_amount">Converted Amount</Label>
                 <div class="flex items-center gap-2">
-                  <span class="text-sm text-gray-600 dark:text-gray-400">{{ destinationCurrency?.symbol || '' }}</span>
+                  <span class="text-sm text-muted-foreground">{{ destinationCurrency?.symbol || '' }}</span>
                   <Input
                     id="converted_amount"
                     v-model="form.converted_amount"
@@ -114,7 +114,7 @@
                   />
                 </div>
                 <p v-if="form.errors.converted_amount" class="text-sm text-red-600">{{ form.errors.converted_amount }}</p>
-                <p class="text-xs text-gray-500">
+                <p class="text-xs text-muted-foreground">
                   Amount that will be added to the destination account
                 </p>
               </div>
@@ -139,7 +139,7 @@
 
           <!-- Description -->
           <div class="space-y-2">
-            <Label for="description">{{ t('transactions.description') }} <span class="text-gray-500">({{ t('common.optional') }})</span></Label>
+            <Label for="description">{{ t('transactions.description') }} <span class="text-muted-foreground">({{ t('common.optional') }})</span></Label>
             <Input
               id="description"
               v-model="form.description"
@@ -171,7 +171,7 @@
               type="button" 
               @click="handleDelete"
               :disabled="form.processing || isDeleting"
-              class="transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <LoadingSpinner v-if="isDeleting" class="w-4 h-4" />
               <Trash2 v-else class="w-4 h-4" />
@@ -183,7 +183,7 @@
             <Button 
               type="submit" 
               :disabled="form.processing || isDeleting"
-              class="transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <LoadingSpinner v-if="form.processing" class="w-4 h-4" />
               <Save v-else-if="isEditing" class="w-4 h-4" />

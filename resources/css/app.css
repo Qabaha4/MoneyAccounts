@@ -9,13 +9,14 @@
 
 @theme inline {
     --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+        Inter, ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+    --radius-xl: 1.25rem;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -61,108 +62,20 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
+html {
+  scroll-behavior: smooth;
+}
 
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
+/* Border and body defaults */
 @layer base {
     *,
     ::after,
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--border, currentColor);
     }
-}
 
-@layer utilities {
-    body,
-    html {
-        --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-            'Noto Color Emoji';
-    }
-}
-
-:root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(12 76% 61%);
-    --chart-2: hsl(173 58% 39%);
-    --chart-3: hsl(197 37% 24%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(27 87% 67%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
-}
-
-.dark {
-    --background: hsl(0 0% 2%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 2%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 2%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 3%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
-}
-
-@layer base {
     * {
         @apply border-border outline-ring/50;
     }
@@ -170,6 +83,152 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* ───── Light Theme ───── */
+:root {
+    --background: hsl(0 0% 97%);
+    --foreground: hsl(240 6% 10%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(240 6% 10%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(240 6% 10%);
+
+    --primary: hsl(217 91% 60%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(240 4% 92%);
+    --secondary-foreground: hsl(240 6% 10%);
+    --muted: hsl(240 4% 93%);
+    --muted-foreground: hsl(240 4% 50%);
+    --accent: hsl(240 4% 90%);
+    --accent-foreground: hsl(240 6% 10%);
+
+    --destructive: hsl(0 84% 60%);
+    --destructive-foreground: hsl(0 0% 100%);
+
+    --border: hsl(0 0% 0% / 0.06);
+    --input: hsl(0 0% 0% / 0.08);
+    --ring: hsl(217 91% 50%);
+
+    --chart-1: hsl(217 91% 55%);
+    --chart-2: hsl(142 76% 40%);
+    --chart-3: hsl(38 92% 45%);
+    --chart-4: hsl(0 84% 55%);
+    --chart-5: hsl(280 65% 55%);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: hsl(0 0% 98%);
+    --sidebar-foreground: hsl(240 6% 10%);
+    --sidebar-primary: hsl(217 91% 60%);
+    --sidebar-primary-foreground: hsl(0 0% 100%);
+    --sidebar-accent: hsl(240 4% 90%);
+    --sidebar-accent-foreground: hsl(240 6% 10%);
+    --sidebar-border: hsl(0 0% 0% / 0.06);
+    --sidebar-ring: hsl(217 91% 50%);
+    --sidebar: hsl(0 0% 98%);
+
+    --brand-start: #8B5CF6;
+    --brand-end: #3B82F6;
+    --checking-start: #2563EB;
+    --checking-end: #06B6D4;
+    --savings-start: #16A34A;
+    --savings-end: #22C55E;
+    --wallet-start: #F97316;
+    --wallet-end: #FBBF24;
+    --investment-start: #7C3AED;
+    --investment-end: #EC4899;
+    --credit-start: #DB2777;
+    --credit-end: #F43F5E;
+    --income: #22C55E;
+    --expense: #F43F5E;
+    --transfer: #3B82F6;
+}
+
+/* ───── Dark Theme ───── */
+.dark {
+    --background: #060A12;
+    --foreground: #F9FAFB;
+    --card: #0C1123;
+    --card-foreground: #F9FAFB;
+    --popover: #0C1123;
+    --popover-foreground: #F9FAFB;
+
+    --primary: #8B5CF6;
+    --primary-foreground: #FFFFFF;
+    --secondary: #141B2D;
+    --secondary-foreground: #94A3B8;
+    --muted: #141B2D;
+    --muted-foreground: #94A3B8;
+    --accent: #141B2D;
+    --accent-foreground: #F9FAFB;
+
+    --destructive: hsl(0 84% 60%);
+    --destructive-foreground: #FFFFFF;
+
+    --border: rgba(255,255,255,0.08);
+    --input: rgba(255,255,255,0.10);
+    --ring: #8B5CF6;
+
+    --chart-1: hsl(217 91% 60%);
+    --chart-2: hsl(142 76% 45%);
+    --chart-3: hsl(38 92% 50%);
+    --chart-4: hsl(280 65% 60%);
+    --chart-5: hsl(0 84% 60%);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: #060A12;
+    --sidebar-foreground: #F9FAFB;
+    --sidebar-primary: #8B5CF6;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #141B2D;
+    --sidebar-accent-foreground: #F9FAFB;
+    --sidebar-border: rgba(255,255,255,0.08);
+    --sidebar-ring: #8B5CF6;
+    --sidebar: #060A12;
+
+    --brand-start: #8B5CF6;
+    --brand-end: #3B82F6;
+    --checking-start: #2563EB;
+    --checking-end: #06B6D4;
+    --savings-start: #16A34A;
+    --savings-end: #22C55E;
+    --wallet-start: #F97316;
+    --wallet-end: #FBBF24;
+    --investment-start: #7C3AED;
+    --investment-end: #EC4899;
+    --credit-start: #DB2777;
+    --credit-end: #F43F5E;
+    --income: #22C55E;
+    --expense: #F43F5E;
+    --transfer: #3B82F6;
+}
+
+@layer utilities {
+    .font-mono-numbers {
+        font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, 'SF Mono', monospace;
+        font-variant-numeric: tabular-nums;
+    }
+
+    html,
+    body {
+        --font-sans:
+            Inter, ui-sans-serif, system-ui, sans-serif,
+            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+            'Noto Color Emoji';
+    }
+}
+
+/* ───── Gradient & glow utilities ───── */
+.gradient-brand      { background-image: linear-gradient(135deg, var(--brand-start), var(--brand-end)); }
+.dark .gradient-brand { background-image: linear-gradient(135deg, color-mix(in srgb, var(--brand-start) 60%, transparent), color-mix(in srgb, var(--brand-end) 60%, transparent)), linear-gradient(135deg, #0C1123, #0C1123); box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.06); }
+.gradient-checking   { background-image: linear-gradient(135deg, var(--checking-start), var(--checking-end)); }
+.gradient-savings    { background-image: linear-gradient(135deg, var(--savings-start), var(--savings-end)); }
+.gradient-wallet     { background-image: linear-gradient(135deg, var(--wallet-start), var(--wallet-end)); }
+.gradient-investment { background-image: linear-gradient(135deg, var(--investment-start), var(--investment-end)); }
+.gradient-credit     { background-image: linear-gradient(135deg, var(--credit-start), var(--credit-end)); }
+
+.card-glow { box-shadow: 0 0 0 1px var(--border), 0 12px 40px -14px rgba(139,92,246,.35); }
 
 /* RTL Variant for Tailwind v4 */
 @custom-variant rtl (&:is([dir="rtl"] *));
@@ -180,10 +239,10 @@
     text-align: right;
 }
 
-/* Amiri for Arabic text; Instrument Sans handles ASCII (digits → Western numerals) */
 [dir="rtl"] body {
-    font-family: 'Instrument Sans', 'Amiri', ui-sans-serif, system-ui, sans-serif,
+    font-family: Inter, 'Amiri', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji' !important;
+    font-variant-numeric: tabular-nums;
 }
 
 [dir="rtl"] .text-left {
@@ -299,7 +358,6 @@
     left: 1rem;
 }
 
-/* Transform for arrows/icons in RTL */
 [dir="rtl"] .rotate-180 {
     transform: rotate(-180deg);
 }
@@ -308,7 +366,6 @@
     transform: rotate(180deg);
 }
 
-/* Flex direction for RTL */
 [dir="rtl"] .flex-row {
     flex-direction: row-reverse;
 }
@@ -341,12 +398,10 @@
     --tw-space-x-reverse: 1;
 }
 
-/* RTL divider */
 [dir="rtl"] .divide-x > :not([hidden]) ~ :not([hidden]) {
     --tw-divide-x-reverse: 1;
 }
 
-/* Transform arrows for RTL */
 [dir="rtl"] .rotate-90 {
     transform: rotate(-90deg);
 }
@@ -355,7 +410,6 @@
     transform: rotate(90deg);
 }
 
-/* Chevron/Arrow direction in RTL */
 [dir="rtl"] [class*="ChevronLeft"],
 [dir="rtl"] [class*="chevron-left"],
 [dir="rtl"] .lucide-chevron-left {
@@ -380,7 +434,6 @@
     transform: rotate(180deg);
 }
 
-/* Sidebar RTL adjustments */
 [dir="rtl"] .sidebar {
     right: 0;
     left: auto;
@@ -390,18 +443,15 @@
     text-align: right;
 }
 
-/* Search icon position RTL */
 [dir="rtl"] .search-icon-left {
     left: auto;
     right: 0.75rem;
 }
 
-/* Select chevrons RTL */
 [dir="rtl"] select {
     background-position: left 0.5rem center;
 }
 
-/* RTL table alignment */
 [dir="rtl"] th.text-start,
 [dir="rtl"] td.text-start {
     text-align: right;
@@ -412,7 +462,6 @@
     text-align: left;
 }
 
-/* RTL text alignment helpers */
 [dir="rtl"] .text-start {
     text-align: right;
 }
@@ -421,7 +470,6 @@
     text-align: left;
 }
 
-/* RTL margins */
 [dir="rtl"] .me-1 {
     margin-left: 0.25rem;
     margin-right: 0;
@@ -472,7 +520,6 @@
     margin-left: 0;
 }
 
-/* RTL padding */
 [dir="rtl"] .pe-2 {
     padding-right: 0;
     padding-left: 0.5rem;
@@ -493,39 +540,11 @@
     padding-right: 1rem;
 }
 
-/* ───── Professional Banking Design Enhancements ───── */
+/* ───── Premium Fintech Design Enhancements ───── */
 
-/* Improved monospace font for financial numbers */
-@layer utilities {
-    .font-mono-numbers {
-        font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, 'SF Mono', monospace;
-        font-variant-numeric: tabular-nums;
-    }
-}
-
-/* Card glass-morphism effect */
-.card-glass {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.dark .card-glass {
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Subtle animated gradient backgrounds */
-@keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-.animate-gradient {
-    background-size: 200% 200%;
-    animation: gradient-shift 8s ease infinite;
+/* Monospace numbers */
+.font-mono-numbers {
+    font-variant-numeric: tabular-nums;
 }
 
 /* Professional focus styles */
@@ -551,7 +570,7 @@
 }
 
 .dark ::-webkit-scrollbar-thumb {
-    background: hsl(0 0% 25%);
+    background: hsl(0 0% 20%);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -559,21 +578,7 @@
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-    background: hsl(0 0% 35%);
-}
-
-/* Card hover lift effect */
-.card-hover {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-}
-
-.dark .card-hover:hover {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    background: hsl(0 0% 30%);
 }
 
 /* Stat value text styling */
@@ -582,28 +587,7 @@
     letter-spacing: -0.02em;
 }
 
-/* Badge dot pulse */
-@keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-.status-dot {
-    animation: pulse-dot 2s ease-in-out infinite;
-}
-
-/* RTL-safe card padding */
-.card-rtl-pad {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-}
-
-[dir="rtl"] .card-rtl-pad {
-    padding-right: 1.5rem;
-    padding-left: 1.5rem;
-}
-
-/* ───── Print styles ───── */
+/* Print styles */
 @media print {
     [data-slot="sidebar"] {
         display: none !important;

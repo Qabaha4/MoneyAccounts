@@ -11,21 +11,20 @@
         <div v-if="loading">
           <Skeleton class="h-8 w-48" />
         </div>
-        <h2 v-else class="font-semibold text-base sm:text-lg text-gray-900 dark:text-gray-100 truncate">
+        <h2 v-else class="font-semibold text-base sm:text-lg text-foreground truncate">
           {{ account.name }}
         </h2>
         <div class="flex items-center gap-1">
           <Badge 
-            :variant="account.is_active ? 'outline' : 'secondary'" 
-            :class="account.is_active ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700' : ''"
+            variant="secondary"
             class="px-2 py-0.5 text-xs"
           >
             {{ account.is_active ? t('accounts.active') : t('accounts.inactive') }}
           </Badge>
-          <Button size="sm" variant="ghost" @click="openPrintReport" class="h-7 w-7 p-0 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20" title="Print Report">
+          <Button size="sm" variant="ghost" @click="openPrintReport" class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-accent/50" title="Print Report">
             <Printer class="w-4 h-4" />
           </Button>
-          <Button size="sm" variant="ghost" @click="openAccountEditModal" class="h-7 w-7 p-0 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+          <Button size="sm" variant="ghost" @click="openAccountEditModal" class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-accent/50">
             <Edit class="w-4 h-4" />
           </Button>
         </div>
@@ -51,17 +50,18 @@
         />
 
         <!-- Account Description (if exists) -->
-        <Card v-if="account.description" class="border-l-4 border-l-blue-500">
+        <Card v-if="account.description">
           <CardContent class="p-4 sm:p-6">
             <div class="flex items-start gap-3">
-              <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                <Receipt class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                   :class="getAccountTypeStyle(account.type).gradientClass">
+                <component :is="getAccountTypeStyle(account.type).icon" class="w-5 h-5 text-white" />
               </div>
               <div>
-                <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                <div class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   {{ t('accounts.description') }}
                 </div>
-                <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                <p class="text-sm text-foreground/80 leading-relaxed">
                   {{ account.description }}
                 </p>
               </div>
@@ -73,7 +73,7 @@
         <Card>
           <CardContent class="p-4 sm:p-6">
             <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+              <h3 class="text-lg font-bold text-foreground">
                 {{ t('transactions.recent_transactions') }}
               </h3>
               <div class="flex items-center gap-2">
@@ -91,7 +91,7 @@
 
             <!-- Search Bar -->
             <div class="relative mb-6">
-              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 v-model="searchQuery"
                 type="text"
@@ -101,7 +101,7 @@
             </div>
 
             <div v-if="loading" class="space-y-3">
-              <div v-for="i in 3" :key="i" class="flex items-center gap-3 p-3 border rounded-xl">
+              <div v-for="i in 3" :key="i" class="flex items-center gap-3 p-3 border border-border/50 rounded-xl">
                 <Skeleton class="h-12 w-12 rounded-xl" />
                 <div class="flex-1 space-y-2">
                   <Skeleton class="h-4 w-32" />
@@ -115,30 +115,13 @@
               <div 
                 v-for="transaction in filteredTransactions" 
                 :key="transaction.id"
-                class="group flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer border-l-4"
-                :class="{
-                  'border-l-emerald-500': transaction.type === 'income',
-                  'border-l-rose-500': transaction.type === 'expense',
-                  'border-l-blue-500': transaction.type === 'transfer'
-                }"
+                class="group flex items-center gap-3 p-3 rounded-xl hover:bg-accent/30 transition-all cursor-pointer border border-border/50"
                 @click="openEditModal(transaction)"
               >
                 <!-- Icon -->
-                <div 
-                  class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                  :class="{
-                    'bg-emerald-100 dark:bg-emerald-900/30': transaction.type === 'income',
-                    'bg-rose-100 dark:bg-rose-900/30': transaction.type === 'expense',
-                    'bg-blue-100 dark:bg-blue-900/30': transaction.type === 'transfer'
-                  }"
-                >
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-secondary/50 flex items-center justify-center flex-shrink-0">
                   <span 
-                    class="text-lg font-bold"
-                    :class="{
-                      'text-emerald-600 dark:text-emerald-400': transaction.type === 'income',
-                      'text-rose-600 dark:text-rose-400': transaction.type === 'expense',
-                      'text-blue-600 dark:text-blue-400': transaction.type === 'transfer'
-                    }"
+                    class="text-lg font-bold text-muted-foreground"
                   >
                     {{ getAmountPrefix(transaction.type) }}
                   </span>
@@ -146,17 +129,17 @@
 
                 <!-- Info -->
                 <div class="flex-1 min-w-0">
-                  <h4 class="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate mb-1">
+                  <h4 class="font-semibold text-sm text-foreground truncate mb-1">
                     {{ transaction.description || t('transactions.no_description') }}
                   </h4>
-                  <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <div class="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{{ formatDate(transaction.transaction_date) }}</span>
                     <span v-if="transaction.type === 'transfer'">
                       <template v-if="transaction.is_incoming_transfer">
                         ← from 
                         <button 
                           @click.stop="navigateToAccount(transaction.account.id)"
-                          class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium"
+                          class="text-foreground/70 hover:text-foreground underline font-medium"
                         >
                           {{ transaction.account.name }}
                         </button>
@@ -165,7 +148,7 @@
                          → to 
                          <button 
                            @click.stop="navigateToAccount(transaction.transfer_to_account.id)"
-                           class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium"
+                           class="text-foreground/70 hover:text-foreground underline font-medium"
                          >
                            {{ transaction.transfer_to_account.name }}
                          </button>
@@ -183,7 +166,7 @@
                     >
                       {{ getAmountPrefix(transaction.type, transaction.is_incoming_transfer) }}{{ account.currency.symbol }}{{ formatAmount(getEffectiveAmount(transaction)) }}
                     </div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                    <div class="text-xs text-muted-foreground capitalize">
                       {{ getTransactionLabel(transaction.type, transaction.is_incoming_transfer) }}
                     </div>
                   </div>
@@ -211,20 +194,20 @@
               </Button>
             </div>
 
-            <div v-else class="text-center py-12">
-              <div class="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <component :is="searchQuery.trim() ? Search : Receipt" class="w-8 h-8 text-slate-400" />
+            <div v-if="!loading && filteredTransactions.length === 0" class="text-center py-12">
+              <div class="rounded-full w-16 h-16 bg-secondary/50 flex items-center justify-center mx-auto mb-4">
+                <component :is="searchQuery.trim() ? Search : Receipt" class="w-8 h-8 text-muted-foreground" />
               </div>
-              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+              <h3 class="text-lg font-bold text-foreground mb-2">
                 {{ searchQuery.trim() ? 'No transactions found' : t('transactions.no_transactions') }}
               </h3>
-              <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              <p class="text-sm text-muted-foreground mb-4">
                 {{ searchQuery.trim() ? `No transactions match "${searchQuery.trim()}". Try a different search term.` : t('transactions.start_adding') }}
               </p>
               <Button v-if="searchQuery.trim()" @click="searchQuery = ''" variant="outline" class="me-2">
                 Clear Search
               </Button>
-              <Button @click="openCreateModal" class="bg-gradient-to-r from-blue-600 to-blue-700">
+              <Button @click="openCreateModal">
                 <Plus class="w-4 h-4 me-2" />
                 {{ t('transactions.add_transaction') }}
               </Button>
@@ -257,7 +240,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -276,6 +259,7 @@ import AccountFormModal from '@/components/AccountFormModal.vue'
 import HeroSection from '@/components/HeroSection.vue'
 import { type BreadcrumbItem } from '@/types'
 import { useFormatting } from '@/composables/useFormatting'
+import { useAccountType } from '@/composables/useAccountType'
 
 interface Currency {
   id: number
@@ -329,6 +313,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const { formatDateTime: fmtDateTime, formatAmount } = useFormatting()
+const { getAccountTypeStyle } = useAccountType()
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -349,10 +334,22 @@ const isAccountModalOpen = ref(false)
 const searchQuery = ref('')
 const allTransactions = ref<Transaction[]>([])
 const loadingMore = ref(false)
+const isAppendingTransactions = ref(false)
 
 // Initialize accumulated transactions from server prop
 const currentPage = ref(props.transactionsMeta?.current_page ?? 1)
 const hasMore = computed(() => props.transactionsMeta ? currentPage.value < props.transactionsMeta.last_page : false)
+
+// Sync transactions whenever props update (form submit, page reload, etc.)
+watch(() => props.account?.transactions, (transactions) => {
+  if (!transactions) return
+  if (isAppendingTransactions.value) {
+    isAppendingTransactions.value = false
+  } else {
+    allTransactions.value = transactions
+    currentPage.value = 1
+  }
+}, { immediate: true })
 
 // Computed properties for HeroSection component
 const totalBalance = computed(() => props.account.balance)
@@ -420,15 +417,15 @@ const getTransactionVariant = (type: string) => {
 const getAmountColor = (type: string, isIncomingTransfer?: boolean) => {
   switch (type) {
     case 'income':
-      return 'text-emerald-600 dark:text-emerald-400'
+      return 'text-success'
     case 'expense':
-      return 'text-rose-600 dark:text-rose-400'
+      return 'text-destructive'
     case 'transfer':
       return isIncomingTransfer 
-        ? 'text-emerald-600 dark:text-emerald-400' 
-        : 'text-blue-600 dark:text-blue-400'
+        ? 'text-success' 
+        : 'text-muted-foreground'
     default:
-      return 'text-gray-600 dark:text-gray-400'
+      return 'text-muted-foreground'
   }
 }
 
@@ -465,30 +462,24 @@ const formatDate = (dateString: string) => {
 }
 
 onMounted(() => {
-  try {
-    if (!props.account) {
-      handleError('Account data not found')
-      return
-    }
-
-    if (!props.account.currency) {
-      handleError('Account currency information is missing')
-      return
-    }
-
-    // Initialize accumulated transactions with server data
-    allTransactions.value = props.account.transactions || []
-
-    error.value = null
-  } catch (err) {
-    handleError(err instanceof Error ? err.message : 'Failed to load account data')
+  if (!props.account) {
+    handleError('Account data not found')
+    return
   }
+
+  if (!props.account.currency) {
+    handleError('Account currency information is missing')
+    return
+  }
+
+  error.value = null
 })
 
 const loadMoreTransactions = () => {
   if (loadingMore.value || !hasMore.value) return
 
   loadingMore.value = true
+  isAppendingTransactions.value = true
   const nextPage = currentPage.value + 1
 
   router.reload({
@@ -497,13 +488,13 @@ const loadMoreTransactions = () => {
     preserveState: true,
     preserveScroll: true,
     onSuccess: () => {
-      // Append new transactions to accumulated list
       const newTransactions = props.account.transactions || []
       allTransactions.value = [...allTransactions.value, ...newTransactions]
       currentPage.value = nextPage
       loadingMore.value = false
     },
     onError: () => {
+      isAppendingTransactions.value = false
       loadingMore.value = false
     },
   })
@@ -526,7 +517,7 @@ const openEditModal = (transaction: Transaction) => {
 }
 
 const handleTransactionSuccess = () => {
-  router.reload({ only: ['account'] })
+  // Form submission already redirected and updated props; watch handles sync
 }
 
 const openAccountEditModal = () => {
@@ -534,7 +525,7 @@ const openAccountEditModal = () => {
 }
 
 const handleAccountSuccess = () => {
-  router.reload({ only: ['account'] })
+  // Form submission already redirected and updated props; watch handles sync
 }
 
 const navigateToAccount = (accountId: number) => {

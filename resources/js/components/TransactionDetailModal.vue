@@ -10,66 +10,62 @@
       </DialogDescription>
       
       <!-- Hero Section with Amount -->
-      <div class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-8 py-10">
-        <div class="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]"></div>
-        
-        <div class="relative">
-          <!-- Type Badge -->
-          <div class="flex items-center justify-between mb-6">
-            <Badge 
-              :variant="transaction?.type === 'income' ? 'default' : transaction?.type === 'expense' ? 'destructive' : 'secondary'"
-              class="text-xs font-semibold px-3 py-1"
-            >
-              {{ transaction?.type?.toUpperCase() }}
-            </Badge>
-            <span class="text-xs text-slate-400 font-mono">
-              #{{ transaction?.id }}
-            </span>
-          </div>
+      <div class="bg-card px-8 py-10 border-b border-border/50">
+        <!-- Type Badge -->
+        <div class="flex items-center justify-between mb-6">
+          <Badge 
+            :variant="transaction?.type === 'income' ? 'default' : transaction?.type === 'expense' ? 'destructive' : 'secondary'"
+            class="text-xs font-semibold px-3 py-1"
+          >
+            {{ transaction?.type?.toUpperCase() }}
+          </Badge>
+          <span class="text-xs text-muted-foreground font-mono">
+            #{{ transaction?.id }}
+          </span>
+        </div>
 
-          <!-- Amount -->
-          <div class="text-center mb-8">
-            <div class="text-sm text-slate-400 mb-2 font-medium">{{ t('transactions.amount').toUpperCase() }}</div>
-            <div 
-              class="text-5xl font-bold tracking-tight mb-2"
-              :class="{
-                'text-emerald-400': transaction?.type === 'income',
-                'text-red-400': transaction?.type === 'expense',
-                'text-blue-400': transaction?.type === 'transfer'
-              }"
-            >
-              {{ transaction?.type === 'income' ? '+' : transaction?.type === 'expense' ? '-' : '' }}{{ transaction?.account.currency.symbol }}{{ formatAmount(getEffectiveAmount(transaction)) }}
-            </div>
-            <div class="text-sm text-slate-400">
-              {{ transaction?.account.currency.code }}
-            </div>
+        <!-- Amount -->
+        <div class="text-center mb-8">
+          <div class="text-sm text-muted-foreground mb-2 font-medium">{{ t('transactions.amount').toUpperCase() }}</div>
+          <div 
+            class="text-5xl font-bold tracking-tight mb-2 stat-value"
+            :class="{
+              'text-success': transaction?.type === 'income',
+              'text-destructive': transaction?.type === 'expense',
+              'text-foreground': transaction?.type === 'transfer'
+            }"
+          >
+            {{ transaction?.type === 'income' ? '+' : transaction?.type === 'expense' ? '-' : '' }}{{ transaction?.account.currency.symbol }}{{ formatAmount(getEffectiveAmount(transaction)) }}
           </div>
+          <div class="text-sm text-muted-foreground">
+            {{ transaction?.account.currency.code }}
+          </div>
+        </div>
 
-          <!-- Date -->
-          <div class="flex items-center justify-center gap-2 text-slate-300">
-            <Calendar class="w-4 h-4" />
-            <span class="text-sm">
-              {{ transaction?.transaction_date ? formatDateFull(transaction.transaction_date) : '' }}
-            </span>
-            <span class="text-slate-500">•</span>
-            <span class="text-sm font-mono">
-              {{ transaction?.transaction_date ? formatTime(transaction.transaction_date) : '' }}
-            </span>
-          </div>
+        <!-- Date -->
+        <div class="flex items-center justify-center gap-2 text-muted-foreground">
+          <Calendar class="w-4 h-4" />
+          <span class="text-sm">
+            {{ transaction?.transaction_date ? formatDateFull(transaction.transaction_date) : '' }}
+          </span>
+          <span class="text-muted-foreground/50">•</span>
+          <span class="text-sm font-mono">
+            {{ transaction?.transaction_date ? formatTime(transaction.transaction_date) : '' }}
+          </span>
         </div>
       </div>
 
       <!-- Details Section -->
-      <div class="p-8 space-y-6 bg-white dark:bg-slate-950">
+      <div class="p-8 space-y-6 bg-background">
         <!-- Description -->
         <div v-if="transaction?.description">
           <div class="flex items-center gap-2 mb-3">
-            <div class="w-1 h-5 bg-blue-500 rounded-full"></div>
-            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            <div class="w-0.5 h-4 bg-border rounded-full"></div>
+            <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Description
             </span>
           </div>
-          <p class="text-base text-slate-900 dark:text-slate-100 leading-relaxed pl-3">
+          <p class="text-base text-foreground leading-relaxed ps-3">
             {{ transaction.description }}
           </p>
         </div>
@@ -79,30 +75,31 @@
           <!-- From Account -->
           <div class="group">
             <div class="flex items-center gap-2 mb-3">
-              <div class="w-1 h-5 bg-purple-500 rounded-full"></div>
-              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <div class="w-0.5 h-4 bg-border rounded-full"></div>
+              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 From Account
               </span>
             </div>
             <div 
-              class="pl-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded-lg p-2 -m-2 transition-colors"
+              class="ps-3 flex items-center justify-between cursor-pointer hover:bg-accent/30 rounded-lg p-2 -m-2 transition-colors"
               @click="transaction?.account.id && $emit('navigateToAccount', transaction.account.id)"
             >
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                  <CreditCard class="w-5 h-5 text-white" />
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+                     :class="getAccountTypeStyle(transaction?.account?.type || 'other').gradientClass">
+                  <component :is="getAccountTypeStyle(transaction?.account?.type || 'other').icon" class="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <div class="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  <div class="text-base font-semibold text-foreground">
                     {{ transaction?.account.name }}
                   </div>
-                  <div class="text-xs text-slate-500 dark:text-slate-400">
+                  <div class="text-xs text-muted-foreground">
                     {{ transaction?.account.currency.code }} Account
                   </div>
                 </div>
               </div>
               <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                <ExternalLink class="w-4 h-4 text-slate-400" />
+                <ExternalLink class="w-4 h-4 text-muted-foreground" />
               </div>
             </div>
           </div>
@@ -110,37 +107,38 @@
           <!-- To Account (if transfer) -->
           <div v-if="transaction?.transfer_to_account" class="group">
             <div class="flex items-center gap-2 mb-3">
-              <div class="w-1 h-5 bg-cyan-500 rounded-full"></div>
-              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <div class="w-0.5 h-4 bg-border rounded-full"></div>
+              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 To Account
               </span>
             </div>
             <div 
-              class="pl-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded-lg p-2 -m-2 transition-colors"
+              class="ps-3 flex items-center justify-between cursor-pointer hover:bg-accent/30 rounded-lg p-2 -m-2 transition-colors"
               @click="transaction?.transfer_to_account?.id && $emit('navigateToAccount', transaction.transfer_to_account.id)"
             >
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
-                  <ArrowRightLeft class="w-5 h-5 text-white" />
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+                     :class="getAccountTypeStyle(transaction?.transfer_to_account?.type || 'other').gradientClass">
+                  <component :is="getAccountTypeStyle(transaction?.transfer_to_account?.type || 'other').icon" class="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <div class="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  <div class="text-base font-semibold text-foreground">
                     {{ transaction.transfer_to_account.name }}
                   </div>
-                  <div class="text-xs text-slate-500 dark:text-slate-400">
+                  <div class="text-xs text-muted-foreground">
                     Destination Account
                   </div>
                 </div>
               </div>
               <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                <ExternalLink class="w-4 h-4 text-slate-400" />
+                <ExternalLink class="w-4 h-4 text-muted-foreground" />
               </div>
             </div>
           </div>
         </div>
 
         <!-- Actions -->
-        <div v-if="!hideActions" class="flex items-center gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <div v-if="!hideActions" class="flex items-center gap-3 pt-6 border-t border-border/50">
           <Button
             variant="outline"
             @click="transaction && $emit('edit', transaction)"
@@ -183,9 +181,11 @@ import {
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useFormatting } from '@/composables/useFormatting'
+import { useAccountType } from '@/composables/useAccountType'
 
 const { t } = useI18n()
 const { formatAmount, formatDate, formatDateFull, formatTime } = useFormatting()
+const { getAccountTypeStyle } = useAccountType()
 
 interface Currency {
   id: number
@@ -197,6 +197,7 @@ interface Currency {
 interface Account {
   id: number
   name: string
+  type: string
   currency: Currency
 }
 

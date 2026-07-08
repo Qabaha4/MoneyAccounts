@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, TrendingUp, TrendingDown, ArrowUpDown, Eye, ArrowRight, Wallet, Receipt, ChevronDown } from 'lucide-vue-next';
+import { Plus, TrendingUp, TrendingDown, ArrowUpDown, Eye, ArrowRight, Wallet, Receipt, ChevronDown, Landmark, BarChart3, List, ArrowRightLeft } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import TransactionDetailModal from '@/components/TransactionDetailModal.vue';
@@ -17,6 +17,7 @@ import HeroSection from '@/components/HeroSection.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import DashboardSkeleton from '@/components/DashboardSkeleton.vue';
 import { useFormatting } from '@/composables/useFormatting';
+import { useAccountType } from '@/composables/useAccountType';
 
 interface Currency {
     id: number;
@@ -62,6 +63,7 @@ const props = defineProps<Props>();
 
 const { t } = useI18n();
 const { formatDateTime: fmtDateTime, formatDate: fmtDate, formatAmount, formatCurrency } = useFormatting();
+const { getAccountTypeStyle } = useAccountType();
 
 // Mobile detection and collapse state
 const isMobile = ref(false);
@@ -144,42 +146,19 @@ const getTransactionIcon = (type: string) => {
     }
 };
 
-const getTransactionColor = (type: string) => {
-    switch (type) {
-        case 'income':
-            return 'text-emerald-600 dark:text-emerald-400';
-        case 'expense':
-            return 'text-rose-600 dark:text-rose-400';
-        case 'transfer':
-            return 'text-blue-600 dark:text-blue-400';
-        default:
-            return 'text-slate-600 dark:text-slate-400';
+const getTransactionAmountColor = (transaction: Transaction) => {
+    if (transaction.type === 'transfer' && transaction.is_incoming_transfer) {
+        return 'text-success';
     }
-};
-
-const getTransactionBgColor = (type: string) => {
-    switch (type) {
+    switch (transaction.type) {
         case 'income':
-            return 'bg-emerald-100 dark:bg-emerald-900/30';
+            return 'text-success';
         case 'expense':
-            return 'bg-rose-100 dark:bg-rose-900/30';
+            return 'text-destructive';
         case 'transfer':
-            return 'bg-blue-100 dark:bg-blue-900/30';
+            return 'text-foreground';
         default:
-            return 'bg-slate-100 dark:bg-slate-900/30';
-    }
-};
-
-const getTransactionVariant = (type: string) => {
-    switch (type) {
-        case 'income':
-            return 'default';
-        case 'expense':
-            return 'destructive';
-        case 'transfer':
-            return 'secondary';
-        default:
-            return 'outline';
+            return 'text-muted-foreground';
     }
 };
 
@@ -191,14 +170,6 @@ const openTransactionDetail = (transaction: Transaction) => {
 
 const handleNavigateToAccount = (accountId: number) => {
     window.location.href = accounts.show({ account: accountId }).url;
-};
-
-// Helper methods for enhanced transaction display
-const getTransactionAmountColor = (transaction: Transaction) => {
-    if (transaction.type === 'transfer' && transaction.is_incoming_transfer) {
-        return 'text-emerald-600 dark:text-emerald-400';
-    }
-    return getTransactionColor(transaction.type);
 };
 
 const getTransactionAmountPrefix = (transaction: Transaction) => {
@@ -231,21 +202,21 @@ const handleCurrencyChange = (currency: Currency) => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <template #header>
             <div class="flex items-center justify-between gap-2 py-0.5">
-                <h2 class="font-semibold text-base sm:text-lg text-gray-900 dark:text-gray-100 truncate">
+                <h2 class="font-semibold text-base sm:text-lg text-foreground truncate">
                     {{ t('dashboard.title') }}
                 </h2>
                 <div class="flex items-center gap-1">
-                    <Button size="sm" variant="ghost" class="h-7 w-7 p-0 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20" as-child>
+                    <Button size="sm" variant="ghost" class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-accent/50" as-child>
                         <Link :href="accounts.index().url">
                             <Wallet class="w-4 h-4" />
                         </Link>
                     </Button>
-                    <Button size="sm" variant="ghost" class="h-7 w-7 p-0 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20" as-child>
+                    <Button size="sm" variant="ghost" class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-accent/50" as-child>
                         <Link :href="transactions.index().url">
                             <Receipt class="w-4 h-4" />
                         </Link>
                     </Button>
-                    <Button size="sm" class="h-7 px-2.5 text-xs bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-sm" as-child>
+                    <Button size="sm" class="h-7 px-2.5 text-xs" as-child>
                         <Link :href="transactions.index().url">
                             <Plus class="w-3 h-3 sm:me-1" />
                             <span class="hidden sm:inline font-medium">{{ t('dashboard.add_transaction') }}</span>
@@ -280,13 +251,53 @@ const handleCurrencyChange = (currency: Currency) => {
                         @currency-change="handleCurrencyChange"
                     />
 
+                    <!-- Quick Actions -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <Link :href="accounts.index().url" class="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/10 hover:border-blue-500/30 transition-all group">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+                                <Landmark class="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-foreground group-hover:text-blue-400 transition-colors">{{ t('dashboard.all_accounts') }}</div>
+                                <div class="text-xs text-muted-foreground">{{ t('dashboard.total_count', { count: props.accounts.length }) }}</div>
+                            </div>
+                        </Link>
+                        <Link :href="transactions.index().url" class="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/10 hover:border-emerald-500/30 transition-all group">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-600/20">
+                                <ArrowRightLeft class="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-foreground group-hover:text-emerald-400 transition-colors">{{ t('transactions.title') }}</div>
+                                <div class="text-xs text-muted-foreground">{{ t('dashboard.recent_count', { count: props.recentTransactions.length }) }}</div>
+                            </div>
+                        </Link>
+                        <Link :href="accounts.index().url + '?sort_by=balance_desc'" class="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/10 hover:border-amber-500/30 transition-all group">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-600/20">
+                                <BarChart3 class="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-foreground group-hover:text-amber-400 transition-colors">{{ t('dashboard.top_balances') }}</div>
+                                <div class="text-xs text-muted-foreground">{{ t('dashboard.highest_first') }}</div>
+                            </div>
+                        </Link>
+                        <Link :href="accounts.index().url + '?sort_by=transacted_desc'" class="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/10 hover:border-rose-500/30 transition-all group">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-600 to-pink-500 flex items-center justify-center shadow-lg shadow-rose-600/20">
+                                <List class="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-foreground group-hover:text-rose-400 transition-colors">{{ t('dashboard.recent_activity') }}</div>
+                                <div class="text-xs text-muted-foreground">{{ t('dashboard.last_transaction') }}</div>
+                            </div>
+                        </Link>
+                    </div>
+
                     <!-- Account Overview and Recent Transactions -->
                 <div class="grid gap-6 md:grid-cols-2">
                     <!-- Account Overview -->
                     <Card>
                         <CardContent class="p-4 sm:p-6">
                             <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+                                <h3 class="text-lg font-semibold text-foreground">
                                     {{ t('dashboard.accounts_overview') }}
                                 </h3>
                                 <Button variant="ghost" size="sm" class="h-8" as-child>
@@ -296,33 +307,33 @@ const handleCurrencyChange = (currency: Currency) => {
                                 </Button>
                             </div>
 
-                            <div v-if="props.accounts.length > 0" class="space-y-3">
+                            <div v-if="props.accounts.length > 0" class="space-y-2">
                                 <div 
                                     v-for="account in props.accounts.slice(0, 5)" 
                                     :key="account.id"
-                                    class="group hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden rounded-xl p-3 border"
+                                    class="group hover:bg-accent/30 transition-all duration-200 cursor-pointer overflow-hidden rounded-xl p-3 border border-border/50"
                                     @click="$inertia.visit(accounts.show({ account: account.id }).url)"
                                 >
                                     <div class="flex items-center gap-3">
                                         <!-- Icon -->
-                                        <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-                                            <Wallet class="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                             :class="getAccountTypeStyle(account.type).gradientClass">
+                                            <component :is="getAccountTypeStyle(account.type).icon" class="w-5 h-5 text-white" />
                                         </div>
                                         
                                         <!-- Info -->
                                         <div class="flex-1 min-w-0">
-                                            <h4 class="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate mb-1">
+                                            <h4 class="font-semibold text-sm text-foreground truncate mb-1">
                                                 {{ account.name }}
                                             </h4>
                                             <div class="flex items-center gap-2">
                                                 <Badge 
-                                                    :variant="account.is_active ? 'outline' : 'outline'" 
-                                                    :class="account.is_active ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700'"
+                                                    variant="secondary"
                                                     class="text-xs px-2 py-0.5"
                                                 >
                                                     {{ account.is_active ? t('common.active') : t('common.inactive') }}
                                                 </Badge>
-                                                <span class="text-xs text-slate-500 dark:text-slate-400">{{ account.currency.code }}</span>
+                                                <span class="text-xs text-muted-foreground">{{ account.currency.code }}</span>
                                             </div>
                                         </div>
                                         
@@ -330,7 +341,7 @@ const handleCurrencyChange = (currency: Currency) => {
                                         <div class="text-right flex-shrink-0">
                                             <div 
                                                 class="text-sm font-bold"
-                                                :class="account.balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'"
+                                                :class="account.balance >= 0 ? 'text-success' : 'text-destructive'"
                                             >
                                                 {{ formatCurrency(account.balance, account.currency) }}
                                             </div>
@@ -340,13 +351,13 @@ const handleCurrencyChange = (currency: Currency) => {
                             </div>
 
                             <div v-else class="text-center py-8">
-                                <div class="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                    <Wallet class="w-8 h-8 text-slate-400" />
+                                <div class="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
+                                    <Wallet class="w-8 h-8 text-muted-foreground" />
                                 </div>
-                                <h4 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+                                <h4 class="text-lg font-semibold text-foreground mb-2">
                                     {{ t('dashboard.no_accounts') }}
                                 </h4>
-                                <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                                <p class="text-sm text-muted-foreground mb-4">
                                     {{ t('dashboard.get_started_account') }}
                                 </p>
                                 <Button size="sm" class="h-9" as-child>
@@ -365,15 +376,15 @@ const handleCurrencyChange = (currency: Currency) => {
                             <Collapsible v-model:open="isTransactionsOpen" :disabled="!isMobile">
                                 <div class="flex items-center justify-between mb-6">
                                     <CollapsibleTrigger 
-                                        class="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                        class="flex items-center gap-2 hover:text-foreground transition-colors"
                                         :class="{ 'cursor-pointer': isMobile, 'cursor-default': !isMobile }"
                                     >
-                                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+                                        <h3 class="text-lg font-semibold text-foreground">
                                             {{ t('dashboard.recent_transactions') }}
                                         </h3>
                                         <ChevronDown 
                                             v-if="isMobile"
-                                            class="w-4 h-4 transition-transform duration-200"
+                                            class="w-4 h-4 transition-transform duration-200 text-muted-foreground"
                                             :class="{ 'rotate-180': isTransactionsOpen }"
                                         />
                                     </CollapsibleTrigger>
@@ -389,65 +400,56 @@ const handleCurrencyChange = (currency: Currency) => {
                                         <div 
                                             v-for="transaction in props.recentTransactions.slice(0, 6)" 
                                             :key="transaction.id"
-                                            class="group hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden border-l-4 rounded-xl p-3"
-                                            :class="{
-                                                'border-l-emerald-500': transaction.type === 'income',
-                                                'border-l-rose-500': transaction.type === 'expense',
-                                                'border-l-blue-500': transaction.type === 'transfer'
-                                            }"
+                                            class="group hover:bg-accent/30 transition-all duration-200 cursor-pointer overflow-hidden rounded-xl p-3 border border-border/50"
                                             @click="openTransactionDetail(transaction)"
                                         >
                                             <div class="flex items-center gap-3">
                                                 <!-- Icon -->
-                                                <div 
-                                                    class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                                                    :class="getTransactionBgColor(transaction.type)"
-                                                >
+                                                <div class="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center flex-shrink-0">
                                                     <component 
                                                         :is="getTransactionIcon(transaction.type)" 
-                                                        class="w-5 h-5"
-                                                        :class="getTransactionColor(transaction.type)"
+                                                        class="w-5 h-5 text-muted-foreground"
                                                     />
                                                 </div>
                                                 
                                                 <!-- Info -->
                                                 <div class="flex-1 min-w-0">
-                                                    <h4 class="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate mb-1">
+                                                    <h4 class="font-semibold text-sm text-foreground truncate mb-1">
                                                         {{ transaction.description || t('dashboard.no_description') }}
                                                     </h4>
-                                                    <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                                    <div class="flex items-center gap-2 text-xs text-muted-foreground">
                                                         <template v-if="transaction.type === 'transfer'">
                                                             <template v-if="transaction.is_incoming_transfer">
-                                                                <span class="font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400" 
+                                                                <span class="font-medium cursor-pointer hover:text-foreground" 
                                                                        @click="handleNavigateToAccount(transaction.account.id)">
                                                                      {{ transaction.account.name }}
                                                                  </span>
                                                                  <span>→</span>
-                                                                 <span v-if="transaction.transfer_to_account" class="font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400" 
+                                                                 <span v-if="transaction.transfer_to_account" class="font-medium cursor-pointer hover:text-foreground" 
                                                                        @click="handleNavigateToAccount(transaction.transfer_to_account.id)">
                                                                      {{ transaction.transfer_to_account.name }}
                                                                  </span>
-                                                                <span class="text-emerald-600 dark:text-emerald-400 text-xs">
+                                                                <span class="text-success text-xs">
                                                                     ({{ t('transfer_in') }})
                                                                 </span>
                                                             </template>
                                                             <template v-else>
-                                                                <span class="font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400" 
+                                                                <span class="font-medium cursor-pointer hover:text-foreground" 
                                                                        @click="handleNavigateToAccount(transaction.account.id)">
                                                                      {{ transaction.account.name }}
                                                                  </span>
                                                                  <span>→</span>
-                                                                 <span v-if="transaction.transfer_to_account" class="font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400" 
+                                                                 <span v-if="transaction.transfer_to_account" class="font-medium cursor-pointer hover:text-foreground" 
                                                                        @click="handleNavigateToAccount(transaction.transfer_to_account.id)">
                                                                      {{ transaction.transfer_to_account.name }}
                                                                  </span>
-                                                                <span class="text-rose-600 dark:text-rose-400 text-xs">
+                                                                <span class="text-destructive text-xs">
                                                                     ({{ t('transfer_out') }})
                                                                 </span>
                                                             </template>
                                                         </template>
                                                         <template v-else>
-                                                            <span class="font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400" 
+                                                            <span class="font-medium cursor-pointer hover:text-foreground" 
                                                                   @click="handleNavigateToAccount(transaction.account.id)">
                                                                 {{ transaction.account.name }}
                                                             </span>
@@ -463,7 +465,7 @@ const handleCurrencyChange = (currency: Currency) => {
                                                     >
                                                         {{ getTransactionAmountPrefix(transaction) }}{{ getTransactionCurrency(transaction).symbol }}{{ formatAmount(transaction.amount) }}
                                                     </div>
-                                                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                                                    <div class="text-xs text-muted-foreground">
                                                         {{ fmtDateTime(transaction.transaction_date) }}
                                                     </div>
                                                 </div>
@@ -472,13 +474,13 @@ const handleCurrencyChange = (currency: Currency) => {
                                     </div>
 
                                     <div v-else class="text-center py-8">
-                                        <div class="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                            <Receipt class="w-8 h-8 text-slate-400" />
+                                        <div class="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
+                                            <Receipt class="w-8 h-8 text-muted-foreground" />
                                         </div>
-                                        <h4 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+                                        <h4 class="text-lg font-semibold text-foreground mb-2">
                                             {{ t('dashboard.no_transactions') }}
                                         </h4>
-                                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                                        <p class="text-sm text-muted-foreground mb-4">
                                             {{ t('dashboard.get_started_transaction') }}
                                         </p>
                                         <Button size="sm" class="h-9" as-child>

@@ -8,7 +8,8 @@
     "accounts": "الحسابات",
     "transactions": "المعاملات",
     "report": "التقارير",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "admin": "المشرف"
   },
   "dashboard": {
     "title": "لوحة التحكم",
@@ -44,7 +45,13 @@
     "account_stats": "إحصائيات الحساب",
     "transaction_history": "تاريخ المعاملات",
     "recent": "الأخيرة",
-    "view_all_transactions": "عرض جميع المعاملات"
+    "view_all_transactions": "عرض جميع المعاملات",
+    "all_accounts": "جميع الحسابات",
+    "top_balances": "أعلى الأرصدة",
+    "highest_first": "الأعلى أولاً",
+    "last_transaction": "آخر معاملة",
+    "total_count": "{count} إجمالي",
+    "recent_count": "{count} الأخيرة"
   },
   "accounts": {
     "title": "الحسابات",
@@ -227,7 +234,10 @@
     "no_description": "لا يوجد وصف",
     "from": "من",
     "to": "إلى",
-    "view_report": "عرض التقرير"
+    "view_report": "عرض التقرير",
+    "total_transactions": "إجمالي المعاملات",
+    "opening": "الافتتاحي",
+    "closing": "الختامي"
   },
   "settings": {
     "title": "الإعدادات",
@@ -312,6 +322,21 @@
     "password_placeholder": "كلمة المرور",
     "cancel": "إلغاء",
     "confirm_delete": "حذف الحساب"
+  },
+  "search": {
+    "title": "البحث في الحسابات والمعاملات",
+    "placeholder": "ابحث عن الحسابات والمعاملات والوصف...",
+    "searching": "جاري البحث...",
+    "no_results": "لا توجد نتائج لـ \"{query}\"",
+    "no_results_hint": "حاول البحث عن أسماء الحسابات أو وصف المعاملات",
+    "accounts_section": "الحسابات ({count})",
+    "transactions_section": "المعاملات ({count})",
+    "empty_title": "ابدأ الكتابة للبحث في الحسابات والمعاملات",
+    "empty_hint": "استخدم ↑↓ للتنقل، Enter للاختيار، Esc للإغلاق",
+    "trigger": "بحث...",
+    "dialog_description": "ابحث في حساباتك ومعاملاتك. استخدم حقل البحث للعثور على عناصر محددة، ثم انقر على أي نتيجة لعرض التفاصيل.",
+    "accounts_group": "الحسابات",
+    "transactions_group": "المعاملات"
   },
   "common": {
     "save": "حفظ",

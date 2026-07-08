@@ -18,7 +18,8 @@ class AccountController extends Controller
     public function index(Request $request)
     {
         $query = Account::with('currency')
-            ->where('user_id', Auth::id());
+            ->where('user_id', Auth::id())
+            ->withMax('transactions', 'transaction_date');
 
         // Filter by search term
         if ($request->filled('search')) {
@@ -63,7 +64,7 @@ class AccountController extends Controller
         }
 
         // Apply sorting
-        $sortBy = $request->get('sort_by', 'name_asc');
+        $sortBy = $request->get('sort_by', 'transacted_desc');
         switch ($sortBy) {
             case 'name_desc':
                 $query->orderBy('name', 'desc');
@@ -84,8 +85,14 @@ class AccountController extends Controller
                 $query->orderBy('type', 'asc');
                 break;
             case 'name_asc':
-            default:
                 $query->orderBy('name', 'asc');
+                break;
+            case 'transacted_asc':
+                $query->orderByRaw('COALESCE(transactions_max_transaction_date, \'1970-01-01\') ASC');
+                break;
+            case 'transacted_desc':
+            default:
+                $query->orderByRaw('COALESCE(transactions_max_transaction_date, \'1970-01-01\') DESC');
                 break;
         }
 
