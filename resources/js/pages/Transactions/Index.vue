@@ -2,15 +2,15 @@
   <AppLayout :title="t('transactions.title')">
     <template #header>
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h2 class="font-bold text-xl sm:text-2xl text-gray-900 dark:text-gray-100">
+        <h2 class="font-bold text-xl sm:text-2xl text-foreground">
           {{ t('transactions.title') }}
         </h2>
         <div class="flex items-center gap-2">
           <Button variant="outline" size="sm" @click="toggleView" class="h-9">
             <component :is="viewMode === 'grid' ? List : Grid" class="w-4 h-4 sm:me-2" />
-            <span class="hidden sm:inline">{{ viewMode === 'grid' ? 'List' : 'Grid' }}</span>
+                <span class="hidden sm:inline">{{ viewMode === 'grid' ? t('transactions.list_view') : t('transactions.grid_view') }}</span>
           </Button>
-          <Button size="sm" @click="openCreateModal" class="h-9 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+          <Button size="sm" @click="openCreateModal" class="h-9">
             <Plus class="w-4 h-4 sm:me-2" />
             <span class="hidden sm:inline">{{ t('transactions.add_transaction') }}</span>
           </Button>
@@ -25,70 +25,70 @@
           <!-- Mobile: Horizontal Scroll -->
           <div class="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide md:hidden">
             <div class="flex-shrink-0 w-40 snap-start">
-              <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 text-white shadow-lg">
-                <TrendingUp class="w-5 h-5 mb-2 opacity-90" />
-                <div class="text-xs font-medium opacity-90 mb-1">Income</div>
-                <div class="text-xl font-bold">+${{ totalIncome.toFixed(2) }}</div>
+              <div class="bg-card border border-border/50 rounded-2xl p-4">
+                <TrendingUp class="w-5 h-5 mb-2 text-success" />
+                <div class="text-xs font-medium text-muted-foreground mb-1">{{ t('transactions.total_income') }}</div>
+                <div class="text-xl font-bold text-success">+{{ formatAmount(totalIncome) }}</div>
               </div>
             </div>
             
             <div class="flex-shrink-0 w-40 snap-start">
-              <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-4 text-white shadow-lg">
-                <TrendingDown class="w-5 h-5 mb-2 opacity-90" />
-                <div class="text-xs font-medium opacity-90 mb-1">Expenses</div>
-                <div class="text-xl font-bold">-${{ totalExpenses.toFixed(2) }}</div>
+              <div class="bg-card border border-border/50 rounded-2xl p-4">
+                <TrendingDown class="w-5 h-5 mb-2 text-destructive" />
+                <div class="text-xs font-medium text-muted-foreground mb-1">{{ t('transactions.total_expenses') }}</div>
+                <div class="text-xl font-bold text-destructive">-{{ formatAmount(totalExpenses) }}</div>
               </div>
             </div>
             
             <div class="flex-shrink-0 w-40 snap-start">
-              <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white shadow-lg">
-                <ArrowUpDown class="w-5 h-5 mb-2 opacity-90" />
-                <div class="text-xs font-medium opacity-90 mb-1">Transfers</div>
-                <div class="text-xl font-bold">{{ totalTransfers }}</div>
+              <div class="bg-card border border-border/50 rounded-2xl p-4">
+                <ArrowUpDown class="w-5 h-5 mb-2 text-muted-foreground" />
+                <div class="text-xs font-medium text-muted-foreground mb-1">{{ t('transactions.transfers_count') }}</div>
+                <div class="text-xl font-bold text-foreground">{{ totalTransfers }}</div>
               </div>
             </div>
             
             <div class="flex-shrink-0 w-40 snap-start">
-              <div class="bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl p-4 text-white shadow-lg">
-                <DollarSign class="w-5 h-5 mb-2 opacity-90" />
-                <div class="text-xs font-medium opacity-90 mb-1">Net Balance</div>
-                <div class="text-xl font-bold">{{ netBalance >= 0 ? '+' : '' }}${{ netBalance.toFixed(2) }}</div>
+              <div class="bg-card border border-border/50 rounded-2xl p-4">
+                <DollarSign class="w-5 h-5 mb-2 text-muted-foreground" />
+                <div class="text-xs font-medium text-muted-foreground mb-1">{{ t('transactions.net_balance') }}</div>
+                <div class="text-xl font-bold text-foreground">{{ netBalance >= 0 ? '+' : '' }}{{ formatAmount(netBalance) }}</div>
               </div>
             </div>
           </div>
 
           <!-- Desktop: Grid -->
           <div class="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 text-white shadow-lg hover:shadow-xl transition-shadow">
+            <div class="bg-card border border-border/50 rounded-2xl p-5 hover:bg-accent/30 transition-colors">
               <div class="flex items-center justify-between mb-3">
-                <div class="text-sm font-medium opacity-90">Total Income</div>
-                <TrendingUp class="w-5 h-5 opacity-90" />
-              </div>
-              <div class="text-2xl font-bold">+${{ totalIncome.toFixed(2) }}</div>
+                <div class="text-sm font-medium text-muted-foreground">{{ t('transactions.total_income') }}</div>
+                  <TrendingUp class="w-5 h-5 text-success" />
+                </div>
+                <div class="text-2xl font-bold text-success">+{{ formatAmount(totalIncome) }}</div>
             </div>
             
-            <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-5 text-white shadow-lg hover:shadow-xl transition-shadow">
+            <div class="bg-card border border-border/50 rounded-2xl p-5 hover:bg-accent/30 transition-colors">
               <div class="flex items-center justify-between mb-3">
-                <div class="text-sm font-medium opacity-90">Total Expenses</div>
-                <TrendingDown class="w-5 h-5 opacity-90" />
-              </div>
-              <div class="text-2xl font-bold">-${{ totalExpenses.toFixed(2) }}</div>
+                <div class="text-sm font-medium text-muted-foreground">{{ t('transactions.total_expenses') }}</div>
+                  <TrendingDown class="w-5 h-5 text-destructive" />
+                </div>
+                <div class="text-2xl font-bold text-destructive">-{{ formatAmount(totalExpenses) }}</div>
             </div>
             
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg hover:shadow-xl transition-shadow">
+            <div class="bg-card border border-border/50 rounded-2xl p-5 hover:bg-accent/30 transition-colors">
               <div class="flex items-center justify-between mb-3">
-                <div class="text-sm font-medium opacity-90">Transfers</div>
-                <ArrowUpDown class="w-5 h-5 opacity-90" />
-              </div>
-              <div class="text-2xl font-bold">{{ totalTransfers }}</div>
+                <div class="text-sm font-medium text-muted-foreground">{{ t('transactions.transfers_count') }}</div>
+                  <ArrowUpDown class="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div class="text-2xl font-bold text-foreground">{{ totalTransfers }}</div>
             </div>
             
-            <div class="bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl p-5 text-white shadow-lg hover:shadow-xl transition-shadow">
+            <div class="bg-card border border-border/50 rounded-2xl p-5 hover:bg-accent/30 transition-colors">
               <div class="flex items-center justify-between mb-3">
-                <div class="text-sm font-medium opacity-90">Net Balance</div>
-                <DollarSign class="w-5 h-5 opacity-90" />
-              </div>
-              <div class="text-2xl font-bold">{{ netBalance >= 0 ? '+' : '' }}${{ netBalance.toFixed(2) }}</div>
+                <div class="text-sm font-medium text-muted-foreground">{{ t('transactions.net_balance') }}</div>
+                  <DollarSign class="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div class="text-2xl font-bold text-foreground">{{ netBalance >= 0 ? '+' : '' }}{{ formatAmount(netBalance) }}</div>
             </div>
           </div>
         </div>
@@ -98,13 +98,13 @@
           <CardContent class="p-4">
             <div class="flex items-center justify-between mb-3 cursor-pointer" @click="toggleFilters">
               <div class="flex items-center gap-2">
-                <Filter class="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  Filters
-                  <Badge v-if="activeFiltersCount > 0" variant="secondary" class="ms-2 text-xs px-2 py-0.5">
-                    {{ activeFiltersCount }}
-                  </Badge>
-                </span>
+                <Filter class="w-4 h-4 text-muted-foreground" />
+                  <span class="text-sm font-semibold text-foreground">
+                    {{ t('transactions.filters_title') }}
+                    <Badge v-if="activeFiltersCount > 0" variant="secondary" class="ms-2 text-xs px-2 py-0.5">
+                      {{ activeFiltersCount }}
+                    </Badge>
+                  </span>
               </div>
               <Button variant="ghost" size="sm" class="h-7 w-7 p-0">
                 <component :is="filtersExpanded ? ChevronUp : ChevronDown" class="w-4 h-4" />
@@ -114,11 +114,11 @@
             <div v-if="filtersExpanded" class="space-y-3 pt-3 border-t">
               <!-- Search -->
               <div class="relative">
-                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   ref="searchInputRef"
                   v-model="filterForm.search"
-                  placeholder="Search transactions..."
+                  :placeholder="t('transactions.search_placeholder')"
                   class="pl-9 h-9 text-sm"
                   @input="debounceSearch"
                 />
@@ -127,17 +127,17 @@
               <!-- Filters Grid -->
               <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <div>
-                  <Label class="text-xs font-medium mb-1.5 block">Account</Label>
+                  <Label class="text-xs font-medium mb-1.5 block">{{ t('transactions.account_filter') }}</Label>
                   <Select 
                     :key="`account-${filterForm.account_id}`"
                     v-model="filterForm.account_id" 
                     @update:model-value="applyFilters"
                   >
                     <SelectTrigger class="h-9 text-sm">
-                      <SelectValue placeholder="All accounts" />
+                      <SelectValue :placeholder="t('transactions.all_accounts')" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All accounts</SelectItem>
+                      <SelectItem value="all">{{ t('transactions.all_accounts') }}</SelectItem>
                       <SelectItem 
                         v-for="account in accounts" 
                         :key="account.id" 
@@ -150,26 +150,26 @@
                 </div>
                 
                 <div>
-                  <Label class="text-xs font-medium mb-1.5 block">Type</Label>
+                  <Label class="text-xs font-medium mb-1.5 block">{{ t('transactions.type_filter') }}</Label>
                   <Select 
                     :key="`type-${filterForm.type}`"
                     v-model="filterForm.type" 
                     @update:model-value="applyFilters"
                   >
                     <SelectTrigger class="h-9 text-sm">
-                      <SelectValue placeholder="All types" />
+                      <SelectValue :placeholder="t('transactions.all_types')" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All types</SelectItem>
-                      <SelectItem value="income">Income</SelectItem>
-                      <SelectItem value="expense">Expense</SelectItem>
-                      <SelectItem value="transfer">Transfer</SelectItem>
+                      <SelectItem value="all">{{ t('transactions.all_types') }}</SelectItem>
+                      <SelectItem value="income">{{ t('transactions.income') }}</SelectItem>
+                      <SelectItem value="expense">{{ t('transactions.expense') }}</SelectItem>
+                      <SelectItem value="transfer">{{ t('transactions.transfer') }}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
-                  <Label class="text-xs font-medium mb-1.5 block">Sort By</Label>
+                  <Label class="text-xs font-medium mb-1.5 block">{{ t('transactions.sort_by') }}</Label>
                   <Select 
                     :key="`sort-${filterForm.sort_by}`"
                     v-model="filterForm.sort_by" 
@@ -179,16 +179,18 @@
                       <SelectValue :placeholder="getSortLabel(filterForm.sort_by)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="transaction_date_desc">Newest first</SelectItem>
-                      <SelectItem value="transaction_date_asc">Oldest first</SelectItem>
-                      <SelectItem value="amount_desc">Highest amount</SelectItem>
-                      <SelectItem value="amount_asc">Lowest amount</SelectItem>
+                      <SelectItem value="transaction_date_desc">{{ t('transactions.sort_date_desc') }}</SelectItem>
+                      <SelectItem value="transaction_date_asc">{{ t('transactions.sort_date_asc') }}</SelectItem>
+                      <SelectItem value="amount_desc">{{ t('transactions.sort_amount_desc') }}</SelectItem>
+                      <SelectItem value="amount_asc">{{ t('transactions.sort_amount_asc') }}</SelectItem>
+                      <SelectItem value="type_asc">{{ t('transactions.sort_type_asc') }}</SelectItem>
+                      <SelectItem value="description_asc">{{ t('transactions.sort_description_asc') }}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
-                  <Label class="text-xs font-medium mb-1.5 block">From Date</Label>
+                  <Label class="text-xs font-medium mb-1.5 block">{{ t('transactions.date_from') }}</Label>
                   <DatePicker 
                     v-model="filterForm.date_from" 
                     @update:model-value="applyFilters"
@@ -198,7 +200,7 @@
                 </div>
                 
                 <div>
-                  <Label class="text-xs font-medium mb-1.5 block">To Date</Label>
+                  <Label class="text-xs font-medium mb-1.5 block">{{ t('transactions.date_to') }}</Label>
                   <DatePicker 
                     v-model="filterForm.date_to" 
                     @update:model-value="applyFilters"
@@ -210,7 +212,7 @@
                 <div class="flex items-end">
                   <Button variant="outline" @click="clearFilters" class="w-full h-9 text-sm">
                     <X class="w-4 h-4 me-1.5" />
-                    Clear
+                    {{ t('transactions.clear_filters') }}
                   </Button>
                 </div>
               </div>
@@ -255,44 +257,26 @@
          </div>
         
         <div v-else-if="transactions.data.length > 0">
-          <!-- Grid View -->
-          <div v-if="viewMode === 'grid'" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <!-- Scrollable Transactions Container -->
+          <div class="max-h-[600px] overflow-y-auto pr-1 space-y-3">
+            <!-- Grid View -->
+            <div v-if="viewMode === 'grid'" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <Card 
               v-for="transaction in transactions.data" 
               :key="transaction.id" 
-              class="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border-none"
+              class="group hover:bg-accent/30 transition-all duration-200 cursor-pointer overflow-hidden border border-border/50"
               @click="viewTransaction(transaction)"
             >
-              <div 
-                class="h-1.5 w-full"
-                :class="{
-                  'bg-gradient-to-r from-emerald-500 to-emerald-600': transaction.type === 'income',
-                  'bg-gradient-to-r from-rose-500 to-rose-600': transaction.type === 'expense',
-                  'bg-gradient-to-r from-blue-500 to-blue-600': transaction.type === 'transfer'
-                }"
-              ></div>
               <CardContent class="p-4">
                 <div class="flex items-center justify-between mb-3">
-                  <div 
-                    class="w-10 h-10 rounded-xl flex items-center justify-center"
-                    :class="{
-                      'bg-emerald-100 dark:bg-emerald-900/30': transaction.type === 'income',
-                      'bg-rose-100 dark:bg-rose-900/30': transaction.type === 'expense',
-                      'bg-blue-100 dark:bg-blue-900/30': transaction.type === 'transfer'
-                    }"
-                  >
+                  <div class="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center">
                     <component 
                       :is="getTransactionIcon(transaction.type)" 
-                      class="w-5 h-5"
-                      :class="{
-                        'text-emerald-600 dark:text-emerald-400': transaction.type === 'income',
-                        'text-rose-600 dark:text-rose-400': transaction.type === 'expense',
-                        'text-blue-600 dark:text-blue-400': transaction.type === 'transfer'
-                      }"
+                      class="w-5 h-5 text-muted-foreground"
                     />
                   </div>
                   <Badge 
-                    :variant="getTransactionVariant(transaction.type)"
+                    variant="secondary"
                     class="text-xs px-2 py-0.5 font-medium"
                   >
                     {{ transaction.type }}
@@ -306,11 +290,11 @@
                   {{ getAmountPrefix(transaction.type, transaction.is_incoming_transfer) }}{{ transaction.account.currency.symbol }}{{ Number(transaction.amount).toLocaleString() }}
                 </div>
                 
-                <p class="font-medium text-sm text-slate-900 dark:text-slate-100 truncate mb-2">
+                <p class="font-medium text-sm text-foreground truncate mb-2">
                   {{ transaction.description || 'No description' }}
                 </p>
                 
-                <div class="text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                <div class="text-xs text-muted-foreground space-y-1">
                   <!-- Account Information -->
                   <template v-if="transaction.type === 'transfer'">
                     <div class="space-y-1">
@@ -362,53 +346,36 @@
             <Card 
               v-for="transaction in transactions.data" 
               :key="transaction.id" 
-              class="group hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden border-l-4"
-              :class="{
-                'border-l-emerald-500': transaction.type === 'income',
-                'border-l-rose-500': transaction.type === 'expense',
-                'border-l-blue-500': transaction.type === 'transfer'
-              }"
+              class="group hover:bg-accent/30 transition-all duration-200 cursor-pointer overflow-hidden border border-border/50"
               @click="viewTransaction(transaction)"
             >
               <CardContent class="p-3 sm:p-4">
                 <div class="flex items-center gap-3">
                   <!-- Icon -->
-                  <div 
-                    class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                    :class="{
-                      'bg-emerald-100 dark:bg-emerald-900/30': transaction.type === 'income',
-                      'bg-rose-100 dark:bg-rose-900/30': transaction.type === 'expense',
-                      'bg-blue-100 dark:bg-blue-900/30': transaction.type === 'transfer'
-                    }"
-                  >
+                  <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-secondary/50 flex items-center justify-center flex-shrink-0">
                     <component 
                       :is="getTransactionIcon(transaction.type)" 
-                      class="w-5 h-5 sm:w-6 sm:h-6"
-                      :class="{
-                        'text-emerald-600 dark:text-emerald-400': transaction.type === 'income',
-                        'text-rose-600 dark:text-rose-400': transaction.type === 'expense',
-                        'text-blue-600 dark:text-blue-400': transaction.type === 'transfer'
-                      }"
+                      class="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground"
                     />
                   </div>
                   
                   <!-- Info -->
                   <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate mb-1">
+                    <h3 class="font-semibold text-sm sm:text-base text-foreground truncate mb-1">
                       {{ transaction.description || 'No description' }}
                     </h3>
                     <div class="space-y-1">
                       <!-- Transfer Information -->
                        <template v-if="transaction.type === 'transfer'">
                          <div class="flex items-center gap-1 text-xs">
-                           <span class="text-slate-500 dark:text-slate-400">{{ t('transactions.from') }}</span>
+                           <span class="text-muted-foreground">{{ t('transactions.from') }}</span>
                            <button 
                              @click.stop="handleNavigateToAccount(transaction.account.id)"
                              class="text-blue-600 dark:text-blue-400 hover:underline truncate"
                            >
                              {{ transaction.account.name }}
                            </button>
-                           <span class="text-slate-500 dark:text-slate-400" v-if="transaction.transfer_to_account">{{ t('transactions.to') }}</span>
+                           <span class="text-muted-foreground" v-if="transaction.transfer_to_account">{{ t('transactions.to') }}</span>
                            <button 
                              v-if="transaction.transfer_to_account"
                              @click.stop="handleNavigateToAccount(transaction.transfer_to_account.id)"
@@ -424,15 +391,15 @@
                           >
                             {{ getTransactionLabel(transaction.type, transaction.is_incoming_transfer) }}
                           </Badge>
-                          <span class="text-xs text-slate-400 dark:text-slate-500">•</span>
-                          <span class="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">
+                          <span class="text-xs text-muted-foreground">•</span>
+                          <span class="text-xs text-muted-foreground hidden sm:inline">
                             {{ formatDate(transaction.transaction_date) }}
                           </span>
                         </div>
                       </template>
                       <!-- Regular Transaction Information -->
                       <template v-else>
-                        <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <div class="flex items-center gap-2 text-xs text-muted-foreground">
                           <button 
                             @click.stop="handleNavigateToAccount(transaction.account.id)"
                             class="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium hover:underline"
@@ -452,15 +419,17 @@
                       class="text-base sm:text-lg font-bold"
                       :class="getAmountColor(transaction.type, transaction.is_incoming_transfer)"
                     >
-                      {{ getAmountPrefix(transaction.type, transaction.is_incoming_transfer) }}{{ transaction.account.currency.symbol }}{{ Number(transaction.amount).toLocaleString() }}
+                  {{ getAmountPrefix(transaction.type, transaction.is_incoming_transfer) }}{{ transaction.account.currency.symbol }}{{ formatAmount(transaction.amount) }}
                     </div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400 sm:hidden mt-0.5">
+                    <div class="text-xs text-muted-foreground sm:hidden mt-0.5">
                       {{ formatDate(transaction.transaction_date) }}
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
+          </div>
+
           </div>
 
           <!-- Pagination -->
@@ -475,7 +444,7 @@
               >
                 <LoadingSpinner v-if="isLoading" class="w-4 h-4" />
                 <ChevronLeft v-else class="w-4 h-4" />
-                <span class="hidden sm:inline ms-1">Previous</span>
+                <span class="hidden sm:inline ms-1">{{ t('transactions.previous') }}</span>
               </Button>
               
               <div class="flex gap-1">
@@ -487,7 +456,7 @@
                   @click="goToPage(page)"
                   :disabled="isLoading"
                   class="min-w-[36px] h-9 text-sm"
-                  :class="{'bg-gradient-to-r from-blue-600 to-blue-700': page === transactions.current_page}"
+                  :class="{'bg-primary text-primary-foreground': page === transactions.current_page}"
                 >
                   <LoadingSpinner v-if="isLoading && page === transactions.current_page" class="w-4 h-4" />
                   <span v-else>{{ page }}</span>
@@ -501,7 +470,7 @@
                 :disabled="transactions.current_page === transactions.last_page || isLoading"
                 class="h-9"
               >
-                <span class="hidden sm:inline me-1">Next</span>
+                <span class="hidden sm:inline me-1">{{ t('transactions.next') }}</span>
                 <LoadingSpinner v-if="isLoading" class="w-4 h-4" />
                 <ChevronRight v-else class="w-4 h-4" />
               </Button>
@@ -513,21 +482,21 @@
         <Card v-else-if="!isLoading && !isFilterLoading" class="text-center py-12 sm:py-16">
           <CardContent>
             <div class="max-w-md mx-auto">
-              <div class="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                <Receipt class="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />
+              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <Receipt class="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
               </div>
-              <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-2 sm:mb-3">
-                {{ hasActiveFilters ? 'No matching transactions' : 'No transactions yet' }}
+              <h3 class="text-lg sm:text-xl font-bold text-foreground mb-2 sm:mb-3">
+                {{ hasActiveFilters ? t('transactions.no_matching') : t('transactions.no_transactions') }}
               </h3>
-              <p class="text-sm text-slate-600 dark:text-slate-400 mb-4 sm:mb-6">
+              <p class="text-sm text-muted-foreground mb-4 sm:mb-6">
                 {{ hasActiveFilters 
-                   ? 'Try adjusting your filters to see more transactions.' 
-                   : 'Get started by creating your first transaction.' }}
+                   ? t('transactions.no_matching_description')
+                   : t('transactions.empty_description') }}
               </p>
               <div class="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button v-if="hasActiveFilters" variant="outline" @click="clearFilters" class="h-10">
                   <X class="w-4 h-4 me-2" />
-                  Clear Filters
+                  {{ t('transactions.clear_filters') }}
                 </Button>
               </div>
             </div>
@@ -571,6 +540,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DatePicker } from '@/components/ui/date-picker'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import TransactionSkeleton from '@/components/TransactionSkeleton.vue'
+import { useFormatting } from '@/composables/useFormatting'
 import { 
   Receipt, Plus, Search, Filter, X, Grid, List, MoreHorizontal,
   TrendingUp, TrendingDown, ArrowUpDown, DollarSign,
@@ -623,10 +593,16 @@ interface Props {
     date_from?: string
     date_to?: string
   }
+  stats: {
+    total_income: number
+    total_expenses: number
+    total_transfers: number
+  }
 }
 
 const props = defineProps<Props>()
 const { t } = useI18n()
+const { formatAmount } = useFormatting()
 
 const viewMode = ref<'grid' | 'list'>('list')
 const searchTimeout = ref<number | null>(null)
@@ -705,19 +681,15 @@ const paginationPages = computed(() => {
 })
 
 const totalIncome = computed(() => {
-  return props.transactions.data
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+  return Number(props.stats.total_income)
 })
 
 const totalExpenses = computed(() => {
-  return props.transactions.data
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+  return Number(props.stats.total_expenses)
 })
 
 const totalTransfers = computed(() => {
-  return props.transactions.data.filter(t => t.type === 'transfer').length
+  return props.stats.total_transfers
 })
 
 const netBalance = computed(() => {
@@ -785,7 +757,7 @@ const getAmountColor = (type: string, isIncomingTransfer?: boolean) => {
     case 'transfer': return isIncomingTransfer 
       ? 'text-emerald-600 dark:text-emerald-400' 
       : 'text-blue-600 dark:text-blue-400'
-    default: return 'text-gray-600 dark:text-gray-400'
+    default: return 'text-muted-foreground'
   }
 }
 
@@ -974,7 +946,7 @@ const handleEditTransaction = (transaction: Transaction) => {
 }
 
 const handleDeleteTransaction = async (transaction: Transaction) => {
-  if (!confirm('Are you sure you want to delete this transaction?')) {
+  if (!confirm(t('transactions.confirm_delete'))) {
     return
   }
   

@@ -15,18 +15,95 @@ class AccountController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $accounts = Account::with('currency')
+        $query = Account::with('currency')
             ->where('user_id', Auth::id())
-            ->orderBy('name')
-            ->get();
+            ->withMax('transactions', 'transaction_date');
+
+        // Filter by search term
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%")
+                    ->orWhereHas('currency', function ($cq) use ($search) {
+                        $cq->where('code', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Filter by type
+        if ($request->filled('type') && $request->type !== 'all') {
+            $query->where('type', $request->type);
+        }
+
+        // Filter by currency
+        if ($request->filled('currency_id') && $request->currency_id !== 'all') {
+            $query->where('currency_id', $request->currency_id);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        // Filter by balance range
+        if ($request->filled('balance_min')) {
+            $query->where('balance', '>=', $request->balance_min);
+        }
+
+        if ($request->filled('balance_max')) {
+            $query->where('balance', '<=', $request->balance_max);
+        }
+
+        // Apply sorting
+        $sortBy = $request->get('sort_by', 'transacted_desc');
+        switch ($sortBy) {
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            case 'balance_asc':
+                $query->orderBy('balance', 'asc');
+                break;
+            case 'balance_desc':
+                $query->orderBy('balance', 'desc');
+                break;
+            case 'created_asc':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'created_desc':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'type_asc':
+                $query->orderBy('type', 'asc');
+                break;
+            case 'name_asc':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'transacted_asc':
+                $query->orderByRaw('COALESCE(transactions_max_transaction_date, \'1970-01-01\') ASC');
+                break;
+            case 'transacted_desc':
+            default:
+                $query->orderByRaw('COALESCE(transactions_max_transaction_date, \'1970-01-01\') DESC');
+                break;
+        }
+
+        $accounts = $query->get();
 
         $currencies = Currency::orderBy('code')->get();
 
         return Inertia::render('Accounts/Index', [
             'accounts' => $accounts,
             'currencies' => $currencies,
+            'filters' => $request->only(['search', 'type', 'currency_id', 'status', 'balance_min', 'balance_max', 'sort_by']),
         ]);
     }
 
@@ -57,7 +134,7 @@ class AccountController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Account $account)
+    public function show(Request $request, Account $account)
     {
         // Verify ownership
         if ($account->user_id !== Auth::id()) {
@@ -66,6 +143,10 @@ class AccountController extends Controller
 
         // Load account with currency
         $account->load('currency');
+
+        // Pagination params
+        $page = (int) $request->get('page', 1);
+        $perPage = 10;
 
         // Get all transactions related to this account (both outgoing and incoming transfers)
         $outgoingTransactions = $account->transactions()
@@ -80,17 +161,22 @@ class AccountController extends Controller
         // Combine and sort all transactions
         $allTransactions = $outgoingTransactions->concat($incomingTransfers)
             ->sortByDesc('transaction_date')
-            ->take(10)
             ->values();
 
+        $total = $allTransactions->count();
+        $lastPage = (int) max(ceil($total / $perPage), 1);
+
+        // Slice the current page
+        $pageTransactions = $allTransactions->forPage($page, $perPage)->values();
+
         // Add a flag to distinguish incoming transfers for UI purposes
-        $allTransactions = $allTransactions->map(function ($transaction) use ($account) {
+        $pageTransactions = $pageTransactions->map(function ($transaction) use ($account) {
             $transaction->is_incoming_transfer = $transaction->transfer_to_account_id == $account->id;
             return $transaction;
         });
 
         // Manually set the transactions relationship
-        $account->setRelation('transactions', $allTransactions);
+        $account->setRelation('transactions', $pageTransactions);
 
         // Get all user accounts for the transaction modal
         $accounts = Account::with('currency')
@@ -105,6 +191,12 @@ class AccountController extends Controller
             'account' => $account,
             'accounts' => $accounts,
             'currencies' => $currencies,
+            'transactionsMeta' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => $lastPage,
+            ],
         ]);
     }
 

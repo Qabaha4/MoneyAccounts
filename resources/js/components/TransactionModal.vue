@@ -69,10 +69,10 @@
           </div>
 
           <!-- Currency Conversion (only for cross-currency transfers) -->
-          <div v-if="isCrossCurrencyTransfer" class="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div v-if="isCrossCurrencyTransfer" class="space-y-4 p-4 bg-secondary/50 rounded-lg border border-border/50">
             <div class="flex items-center gap-2">
-              <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span class="text-sm font-semibold text-blue-700 dark:text-blue-300">Currency Conversion</span>
+              <div class="w-2 h-2 bg-ring rounded-full"></div>
+              <span class="text-sm font-semibold text-foreground">Currency Conversion</span>
             </div>
             
             <div class="grid gap-4">
@@ -80,7 +80,7 @@
               <div class="space-y-2">
                 <Label for="exchange_rate">Exchange Rate</Label>
                 <div class="flex items-center gap-2">
-                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                  <span class="text-sm text-muted-foreground">
                     {{ sourceCurrency?.symbol || '' }} 1 = {{ destinationCurrency?.symbol || '' }}
                   </span>
                   <Input
@@ -101,7 +101,7 @@
               <div class="space-y-2">
                 <Label for="converted_amount">Converted Amount</Label>
                 <div class="flex items-center gap-2">
-                  <span class="text-sm text-gray-600 dark:text-gray-400">{{ destinationCurrency?.symbol || '' }}</span>
+                  <span class="text-sm text-muted-foreground">{{ destinationCurrency?.symbol || '' }}</span>
                   <Input
                     id="converted_amount"
                     v-model="form.converted_amount"
@@ -114,7 +114,7 @@
                   />
                 </div>
                 <p v-if="form.errors.converted_amount" class="text-sm text-red-600">{{ form.errors.converted_amount }}</p>
-                <p class="text-xs text-gray-500">
+                <p class="text-xs text-muted-foreground">
                   Amount that will be added to the destination account
                 </p>
               </div>
@@ -139,7 +139,7 @@
 
           <!-- Description -->
           <div class="space-y-2">
-            <Label for="description">{{ t('transactions.description') }} <span class="text-gray-500">({{ t('common.optional') }})</span></Label>
+            <Label for="description">{{ t('transactions.description') }} <span class="text-muted-foreground">({{ t('common.optional') }})</span></Label>
             <Input
               id="description"
               v-model="form.description"
@@ -171,7 +171,7 @@
               type="button" 
               @click="handleDelete"
               :disabled="form.processing || isDeleting"
-              class="transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <LoadingSpinner v-if="isDeleting" class="w-4 h-4" />
               <Trash2 v-else class="w-4 h-4" />
@@ -183,7 +183,7 @@
             <Button 
               type="submit" 
               :disabled="form.processing || isDeleting"
-              class="transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <LoadingSpinner v-if="form.processing" class="w-4 h-4" />
               <Save v-else-if="isEditing" class="w-4 h-4" />
@@ -241,7 +241,7 @@ interface Transaction {
   description: string | null
   transaction_date: string
   account: Account
-  transfer_to_account?: Account
+  transfer_to_account?: Account | null
   exchange_rate?: string | null
   converted_amount?: string | null
   exchange_rate_source?: string | null
@@ -353,21 +353,22 @@ watch(() => form.converted_amount, () => {
 // Initialize form data when modal opens or transaction changes
 watch([() => props.isOpen, () => props.transaction], () => {
   if (props.isOpen) {
-    if (props.transaction) {
+    const editingTx = props.transaction
+    if (editingTx) {
       // Edit mode - populate with existing transaction data
       // Use nextTick to ensure proper initialization order
       nextTick(() => {
-        form.account_id = props.transaction.account?.id?.toString() || props.defaultAccountId?.toString() || ''
-        form.type = props.transaction.type || ''
-        form.amount = props.transaction.amount || ''
-        form.description = props.transaction.description || ''
+        form.account_id = editingTx.account?.id?.toString() || props.defaultAccountId?.toString() || ''
+        form.type = editingTx.type || ''
+        form.amount = editingTx.amount || ''
+        form.description = editingTx.description || ''
         // Format the stored datetime for datetime-local input
-        form.transaction_date = formatDateTimeLocal(props.transaction.transaction_date)
-        form.transfer_to_account_id = props.transaction.transfer_to_account?.id?.toString() || ''
+        form.transaction_date = formatDateTimeLocal(editingTx.transaction_date)
+        form.transfer_to_account_id = editingTx.transfer_to_account?.id?.toString() || ''
         // Exchange rate fields
-        form.exchange_rate = props.transaction.exchange_rate?.toString() || ''
-        form.converted_amount = props.transaction.converted_amount?.toString() || ''
-        form.exchange_rate_source = props.transaction.exchange_rate_source || 'manual'
+        form.exchange_rate = editingTx.exchange_rate?.toString() || ''
+        form.converted_amount = editingTx.converted_amount?.toString() || ''
+        form.exchange_rate_source = editingTx.exchange_rate_source || 'manual'
       })
     } else {
       // Create mode - reset form with defaults

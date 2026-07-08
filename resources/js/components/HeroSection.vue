@@ -14,27 +14,6 @@ interface Currency {
     decimal_places: number;
 }
 
-interface Account {
-    id: number;
-    name: string;
-    description: string | null;
-    type: string;
-    balance: number;
-    initial_balance: number;
-    is_active: boolean;
-    currency: Currency;
-}
-
-interface Transaction {
-    id: number;
-    type: 'income' | 'expense' | 'transfer';
-    amount: string;
-    description: string;
-    transaction_date: string;
-    account: Account;
-    transfer_to_account?: Account;
-}
-
 interface Props {
     mainSecVal: string;
     mainSecLabel: string;
@@ -67,70 +46,71 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-// Computed property to check if the main value is negative
 const isNegativeBalance = computed(() => {
-    // Extract numeric value from the formatted string
     const numericValue = parseFloat(props.mainSecVal.replace(/[^-\d.]/g, ''));
     return numericValue < 0;
 });
 </script>
 
 <template>
-    <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-5 lg:p-7 text-white shadow-xl relative overflow-hidden">
-        <div class="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]"></div>
-        
+    <div class="gradient-brand rounded-[20px] p-5 sm:p-7 relative overflow-hidden text-white">
+        <!-- Glow orbs -->
+        <div class="absolute -top-20 -left-20 w-64 h-64 bg-white/10 blur-3xl rounded-full pointer-events-none"></div>
+        <div class="absolute -bottom-20 -right-20 w-72 h-72 bg-blue-400/20 blur-3xl rounded-full pointer-events-none"></div>
+
+        <!-- Dot-grid overlay -->
+        <div class="absolute inset-0 opacity-[0.04] pointer-events-none"
+             style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 20px 20px;">
+        </div>
+
         <!-- Edit Button -->
-        <div v-if="props.showEditButton" class="absolute top-3 left-3 sm:top-4 sm:left-4 z-10">
+        <div v-if="props.showEditButton" class="absolute top-4 left-4 z-10">
             <Button
                 variant="ghost"
                 size="sm"
                 @click="emit('edit')"
-                class="h-8 w-8 p-0 text-slate-300 hover:text-white hover:bg-white/10 transition-colors relative z-10"
-                title="Edit Account"
+                class="h-8 w-8 p-0 text-white/70 hover:text-white hover:bg-white/10"
+                :title="t('accounts.edit')"
             >
                 <Edit class="w-4 h-4" />
             </Button>
         </div>
-        
+
         <!-- Status Indicator -->
-        <div v-if="props.showStatus" class="absolute top-3 right-3 sm:top-4 sm:right-4">
-            <div 
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-sm"
-                :class="props.statusVal === 'Active' 
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
-                    : 'bg-rose-500/20 text-rose-300 border-rose-500/30'"
+        <div v-if="props.showStatus" class="absolute top-4 right-4 z-10">
+            <div
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 text-white/90 backdrop-blur-sm"
             >
-                <div 
+                <div
                     class="w-1.5 h-1.5 rounded-full"
-                    :class="props.statusVal === 'Active' ? 'bg-emerald-400' : 'bg-rose-400'"
+                    :class="props.statusVal === 'Active' ? 'bg-green-400' : 'bg-white/40'"
                 ></div>
                 {{ props.statusVal }}
             </div>
         </div>
-        
-        <div class="relative">
-            <div class="mb-3 sm:mb-5">
+
+        <div class="relative z-10">
+            <div class="mb-5">
                 <div class="text-center">
-                    <div class="flex items-center justify-center gap-2 mb-1 sm:mb-1.5">
-                        <div class="text-xs sm:text-sm font-medium text-slate-400">{{ props.mainSecLabel.toUpperCase() }}</div>
+                    <div class="flex items-center justify-center gap-2 mb-2">
+                        <div class="text-xs font-medium text-white/70 uppercase tracking-wider">{{ props.mainSecLabel }}</div>
                         <div v-if="props.showCurrencySelector && props.currencies && props.currencies.length > 1" class="flex items-center">
-                            <span class="text-xs text-slate-500 mr-2">in</span>
-                            <Select 
-                                :model-value="props.selectedCurrency?.id?.toString()" 
+                            <span class="text-xs text-white/70 me-2">in</span>
+                            <Select
+                                :model-value="props.selectedCurrency?.id?.toString()"
                                 @update:model-value="(value) => {
                                     const currency = props.currencies?.find(c => c.id.toString() === value);
                                     if (currency) emit('currencyChange', currency);
                                 }"
                             >
-                                <SelectTrigger class="w-auto h-6 px-2 py-1 text-xs bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50">
+                                <SelectTrigger class="w-auto h-7 px-2 py-1 text-xs bg-white/10 border-white/20 text-white">
                                     <SelectValue :placeholder="props.selectedCurrency?.code || 'Select'" />
                                 </SelectTrigger>
-                                <SelectContent class="bg-slate-800 border-slate-700">
-                                    <SelectItem 
-                                        v-for="currency in props.currencies" 
-                                        :key="currency.id" 
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="currency in props.currencies"
+                                        :key="currency.id"
                                         :value="currency.id.toString()"
-                                        class="text-slate-300 hover:bg-slate-700 focus:bg-slate-700"
                                     >
                                         {{ currency.code }} ({{ currency.symbol }})
                                     </SelectItem>
@@ -138,25 +118,25 @@ const isNegativeBalance = computed(() => {
                             </Select>
                         </div>
                     </div>
-                    <div class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight" 
-                         :class="isNegativeBalance ? 'text-red-400' : 'text-emerald-400'">
+                    <div class="text-4xl sm:text-5xl font-extrabold tracking-tight stat-value"
+                         :class="isNegativeBalance ? 'text-red-300' : 'text-white'">
                         {{ props.mainSecVal }}
                     </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 sm:gap-3 pt-2.5 sm:pt-3 border-t border-slate-700">
+            <div class="grid grid-cols-3 gap-4 pt-5 border-t border-white/10">
                 <div class="text-center">
-                    <div class="text-xs text-slate-400 mb-0.5">{{ props.subSecP1Label }}</div>
-                    <div class="text-sm font-semibold">{{ props.subSecP1Val }}</div>
+                    <div class="text-xs text-white/60 mb-1">{{ props.subSecP1Label }}</div>
+                    <div class="text-sm font-semibold text-white">{{ props.subSecP1Val }}</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-xs text-slate-400 mb-0.5">{{ props.subSecP2Label }}</div>
-                    <div class="text-sm font-semibold">{{ props.subSecP2Val }}</div>
+                    <div class="text-xs text-white/60 mb-1">{{ props.subSecP2Label }}</div>
+                    <div class="text-sm font-semibold text-white">{{ props.subSecP2Val }}</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-xs text-slate-400 mb-0.5">{{ props.subSecP3Label }}</div>
-                    <div class="text-sm font-semibold">{{ props.subSecP3Val }}</div>
+                    <div class="text-xs text-white/60 mb-1">{{ props.subSecP3Label }}</div>
+                    <div class="text-sm font-semibold text-white">{{ props.subSecP3Val }}</div>
                 </div>
             </div>
         </div>

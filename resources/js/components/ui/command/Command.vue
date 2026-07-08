@@ -69,6 +69,13 @@ watch(() => filterState.search, () => {
   filterItems()
 })
 
+// Re-filter when items are added/removed (e.g. after server results arrive)
+watch(() => allItems.value.size, () => {
+  if (filterState.search) {
+    filterItems()
+  }
+})
+
 provideCommandContext({
   allItems,
   allGroups,

@@ -6,6 +6,7 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { initializeTheme } from './composables/useAppearance';
 import i18n from './i18n';
+import { ConfigProvider } from 'reka-ui';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -17,16 +18,19 @@ createInertiaApp({
             import.meta.glob<DefineComponent>('./pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
-        const app = createApp({ render: () => h(App, props) })
-            .use(plugin)
-            .use(i18n);
-        
-        // Set initial locale and direction
         const locale = (props.initialPage.props as any)?.locale || 'en';
+        const dir = ['ar', 'he', 'fa'].includes(locale) ? 'rtl' : 'ltr';
+
         i18n.global.locale.value = locale as 'en' | 'ar';
         document.documentElement.lang = locale;
-        document.documentElement.dir = ['ar', 'he', 'fa'].includes(locale) ? 'rtl' : 'ltr';
-        
+        document.documentElement.dir = dir;
+
+        const app = createApp({
+            render: () => h(ConfigProvider, { dir }, { default: () => h(App, props) }),
+        })
+            .use(plugin)
+            .use(i18n);
+
         app.mount(el);
     },
     progress: {

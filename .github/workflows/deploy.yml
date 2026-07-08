@@ -104,8 +104,8 @@ jobs:
             # Optimize for production
             php artisan optimize
             
-            # Generate application key if needed
-            php artisan key:generate --force
+            # Application key is set once in .env and must NOT be regenerated
+            # php artisan key:generate --force
             
             echo "Deployment completed successfully!"
           EOF

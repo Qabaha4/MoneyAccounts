@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -16,7 +16,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, Wallet, TrendingUp, TrendingDown, ArrowUpDown } from 'lucide-vue-next';
 import TransactionDetailModal from '@/components/TransactionDetailModal.vue';
+import { useFormatting } from '@/composables/useFormatting';
+import { useI18n } from 'vue-i18n';
 import type { BreadcrumbItemType } from '@/types';
+
+const { t } = useI18n();
 
 // TypeScript interfaces for search results
 interface Account {
@@ -89,8 +93,7 @@ const handleSearch = async (query: string) => {
     // Show loading state immediately
     isSearching.value = true;
 
-    // For very short queries (1-2 characters), use shorter debounce
-    const debounceTime = query.trim().length <= 2 ? 100 : 150;
+    const debounceTime = 400;
 
     debounceTimeout = setTimeout(async () => {
         try {
@@ -157,6 +160,8 @@ const handleNavigateToAccount = (accountId: number) => {
     router.visit(`/accounts/${accountId}`);
 };
 
+const { formatCurrency: localeFormatCurrency, formatDate: localeFormatDate } = useFormatting();
+
 // Keyboard shortcut handler
 const handleKeydown = (event: KeyboardEvent) => {
     // Handle Ctrl+K or Cmd+K for search
@@ -188,19 +193,12 @@ onUnmounted(() => {
 });
 
 const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency || 'USD',
-    }).format(amount);
+    return localeFormatCurrency(amount, { id: 0, code: currency || 'USD', symbol: currency || 'USD', name: currency || 'USD' });
 };
 
 const formatTransactionAmount = (amount: number, type: string, currency: string) => {
-    // For expenses, display as negative
     const displayAmount = type === 'expense' ? -Math.abs(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency || 'USD',
-    }).format(displayAmount);
+    return localeFormatCurrency(displayAmount, { id: 0, code: currency || 'USD', symbol: currency || 'USD', name: currency || 'USD' });
 };
 
 // Helper functions for transaction styling
@@ -214,45 +212,6 @@ const getTransactionIcon = (type: string) => {
             return ArrowUpDown;
         default:
             return TrendingUp;
-    }
-};
-
-const getTransactionBgColor = (type: string) => {
-    switch (type) {
-        case 'income':
-            return 'bg-emerald-100 dark:bg-emerald-900/30';
-        case 'expense':
-            return 'bg-rose-100 dark:bg-rose-900/30';
-        case 'transfer':
-            return 'bg-blue-100 dark:bg-blue-900/30';
-        default:
-            return 'bg-slate-100 dark:bg-slate-800';
-    }
-};
-
-const getTransactionColor = (type: string) => {
-    switch (type) {
-        case 'income':
-            return 'text-emerald-600 dark:text-emerald-400';
-        case 'expense':
-            return 'text-rose-600 dark:text-rose-400';
-        case 'transfer':
-            return 'text-blue-600 dark:text-blue-400';
-        default:
-            return 'text-slate-600 dark:text-slate-400';
-    }
-};
-
-const getTransactionBorderColor = (type: string) => {
-    switch (type) {
-        case 'income':
-            return 'border-l-emerald-500';
-        case 'expense':
-            return 'border-l-rose-500';
-        case 'transfer':
-            return 'border-l-blue-500';
-        default:
-            return 'border-l-slate-500';
     }
 };
 </script>
@@ -269,15 +228,15 @@ const getTransactionBorderColor = (type: string) => {
         </div>
 
         <!-- Spotlight Search Trigger -->
-        <div class="ml-auto">
+        <div class="ltr:ml-auto rtl:mr-auto">
             <Button
-                variant="outline"
+                variant="ghost"
                 @click="spotlightOpen = true"
-                class="w-[200px] justify-start text-sm text-muted-foreground md:w-[300px] lg:w-[400px]"
+                class="w-[200px] justify-start text-sm text-muted-foreground border border-border/50 md:w-[300px] lg:w-[400px]"
             >
-                <Search class="mr-2 h-4 w-4 shrink-0" />
-                <span>Search...</span>
-                <kbd class="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                <Search class="ltr:mr-2 rtl:ml-2 h-4 w-4 shrink-0" />
+                <span>{{ t('search.trigger') }}</span>
+                <kbd class="pointer-events-none ltr:ml-auto rtl:mr-auto inline-flex h-5 select-none items-center gap-1 rounded-lg border border-border/50 bg-muted/50 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
                     <span class="text-xs">⌘</span>K
                 </kbd>
             </Button>
@@ -285,36 +244,36 @@ const getTransactionBorderColor = (type: string) => {
 
         <!-- Spotlight Dialog -->
         <Dialog v-model:open="spotlightOpen">
-            <DialogContent class="max-w-2xl p-0 shadow-2xl border-0">
+            <DialogContent class="max-w-2xl p-0">
                 <!-- Accessibility components (visually hidden) -->
                 <DialogTitle class="sr-only">
-                    Search Accounts and Transactions
+                    {{ t('search.title') }}
                 </DialogTitle>
                 <DialogDescription class="sr-only">
-                    Search through your accounts and transactions. Use the search field to find specific items, then click on any result to view details.
+                    {{ t('search.dialog_description') }}
                 </DialogDescription>
                 
-                <Command class="[&_[cmdk-group-heading]]:px-4 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-sm [&_[cmdk-group-heading]]:text-slate-600 [&_[cmdk-group-heading]]:dark:text-slate-400 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-14 [&_[cmdk-input]]:text-base [&_[cmdk-item]]:px-0 [&_[cmdk-item]]:py-0 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5 rounded-xl overflow-hidden">
+                <Command class="[&_[cmdk-group-heading]]:px-4 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-sm [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-14 [&_[cmdk-input]]:text-base [&_[cmdk-item]]:px-0 [&_[cmdk-item]]:py-0 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5 rounded-[16px] overflow-hidden">
                     <CommandInput 
                         v-model="searchQuery"
-                        placeholder="Search accounts and transactions..."
+                        :placeholder="t('search.placeholder')"
                         class="border-0 focus:ring-0"
                     />
                     <CommandList class="max-h-[400px] overflow-y-auto px-2 pb-2">
                         <CommandEmpty v-if="!isSearching">
-                            {{ searchQuery ? `No results found for "${searchQuery}"` : 'Start typing to search...' }}
+                            {{ searchQuery ? t('search.no_results', { query: searchQuery }) : t('search.empty_title') }}
                         </CommandEmpty>
                         
                         <!-- Loading State -->
                         <CommandEmpty v-if="isSearching">
                             <div class="flex items-center justify-center py-6">
                                 <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                                <span class="ml-2">Searching...</span>
+                                <span class="ltr:ml-2 rtl:mr-2">{{ t('search.searching') }}</span>
                             </div>
                         </CommandEmpty>
 
                         <!-- Accounts Group -->
-                        <CommandGroup v-if="searchResults.accounts.length > 0" heading="Accounts">
+                        <CommandGroup v-if="searchResults.accounts.length > 0" :heading="t('search.accounts_group')">
                             <CommandItem
                                 v-for="account in searchResults.accounts"
                                 :key="`account-${account.id}`"
@@ -324,24 +283,23 @@ const getTransactionBorderColor = (type: string) => {
                             >
                                 <div class="flex items-center gap-3 w-full">
                                     <!-- Icon -->
-                                    <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-                                        <Wallet class="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                                    <div class="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center flex-shrink-0">
+                                        <Wallet class="w-5 h-5 text-muted-foreground" />
                                     </div>
                                     
                                     <!-- Info -->
                                     <div class="flex-1 min-w-0">
-                                        <div class="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate mb-1">
+                                        <div class="font-semibold text-sm text-foreground truncate mb-1">
                                             {{ account.name }}
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <Badge 
-                                                :variant="'outline'" 
-                                                :class="account.is_active ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700'"
+                                                variant="secondary"
                                                 class="text-xs px-2 py-0.5"
                                             >
-                                                {{ account.is_active ? 'Active' : 'Inactive' }}
+                                                {{ account.is_active ? t('common.active') : t('common.inactive') }}
                                             </Badge>
-                                            <span class="text-xs text-slate-500 dark:text-slate-400">{{ account.currency?.code || 'USD' }}</span>
+                                            <span class="text-xs text-muted-foreground">{{ account.currency?.code || 'USD' }}</span>
                                         </div>
                                         <div v-if="account.description" class="text-xs text-muted-foreground mt-1 truncate">
                                             {{ account.description }}
@@ -349,12 +307,12 @@ const getTransactionBorderColor = (type: string) => {
                                     </div>
                                     
                                     <!-- Balance -->
-                                    <div class="text-right flex-shrink-0">
+                                    <div class="ltr:text-right rtl:text-left flex-shrink-0">
                                         <div 
                                             class="text-sm font-bold"
-                                            :class="(account.balance || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'"
+                                            :class="(account.balance || 0) >= 0 ? 'text-success' : 'text-destructive'"
                                         >
-                                            {{ account.currency?.symbol || '$' }}{{ Number(account.balance || 0).toLocaleString() }}
+                                            {{ formatCurrency(account.balance || 0, account.currency?.code || 'USD') }}
                                         </div>
                                     </div>
                                 </div>
@@ -362,7 +320,7 @@ const getTransactionBorderColor = (type: string) => {
                         </CommandGroup>
 
                         <!-- Transactions Group -->
-                        <CommandGroup v-if="searchResults.transactions.length > 0" heading="Transactions">
+                        <CommandGroup v-if="searchResults.transactions.length > 0" :heading="t('search.transactions_group')">
                             <CommandItem
                                 v-for="transaction in searchResults.transactions"
                                 :key="`transaction-${transaction.id}`"
@@ -370,49 +328,36 @@ const getTransactionBorderColor = (type: string) => {
                                 @select="selectItem('transaction', transaction.id)"
                                 class="cursor-pointer p-3 hover:bg-accent/50 transition-colors duration-200"
                             >
-                                <div 
-                                    class="flex items-center gap-3 w-full border-l-4 rounded-r-lg pl-3 -ml-3"
-                                    :class="getTransactionBorderColor(transaction.type)"
-                                >
+                                <div class="flex items-center gap-3 w-full">
                                     <!-- Icon -->
-                                    <div 
-                                        class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                                        :class="getTransactionBgColor(transaction.type)"
-                                    >
+                                    <div class="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center flex-shrink-0">
                                         <component 
                                             :is="getTransactionIcon(transaction.type)" 
-                                            class="w-5 h-5"
-                                            :class="getTransactionColor(transaction.type)"
+                                            class="w-5 h-5 text-muted-foreground"
                                         />
                                     </div>
                                     
                                     <!-- Info -->
                                     <div class="flex-1 min-w-0">
-                                        <div class="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate mb-1">
-                                            {{ transaction.description || 'No description' }}
+                                        <div class="font-semibold text-sm text-foreground truncate mb-1">
+                                            {{ transaction.description || t('transactions.no_description') }}
                                         </div>
-                                        <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                        <div class="flex items-center gap-2 text-xs text-muted-foreground">
                                             <span class="font-medium">{{ transaction.account.name }}</span>
                                             <span v-if="transaction.type === 'transfer' && transaction.transfer_to_account">
                                                 → {{ transaction.transfer_to_account.name }}
                                             </span>
                                         </div>
                                         <div v-if="transaction.transaction_date" class="text-xs text-muted-foreground mt-1">
-                                            {{ new Date(transaction.transaction_date).toLocaleString(undefined, { 
-                                                year: 'numeric', 
-                                                month: 'short', 
-                                                day: 'numeric', 
-                                                hour: '2-digit', 
-                                                minute: '2-digit' 
-                                            }) }}
+                                            {{ localeFormatDate(transaction.transaction_date) }}
                                         </div>
                                     </div>
                                     
                                     <!-- Amount -->
-                                    <div class="text-right flex-shrink-0">
+                                    <div class="ltr:text-right rtl:text-left flex-shrink-0">
                                         <div 
                                             class="text-sm font-bold"
-                                            :class="getTransactionColor(transaction.type)"
+                                            :class="transaction.type === 'income' || (transaction.type === 'transfer' && transaction.transfer_to_account) ? 'text-success' : transaction.type === 'expense' ? 'text-destructive' : 'text-foreground'"
                                         >
                                             {{ formatTransactionAmount(transaction.amount, transaction.type, transaction.currency) }}
                                         </div>

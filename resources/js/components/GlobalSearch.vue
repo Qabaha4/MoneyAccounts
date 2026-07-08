@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import {
     DollarSign,
     X,
 } from 'lucide-vue-next';
+import { useFormatting } from '@/composables/useFormatting';
 
 interface SearchResult {
     id: number;
@@ -55,7 +57,11 @@ const isLoading = ref(false);
 const selectedIndex = ref(-1);
 const searchInput = ref<HTMLInputElement>();
 
-let debounceTimeout: number;
+const { t, locale } = useI18n();
+const isRTL = computed(() => locale.value === 'ar');
+const { formatCurrency: localeFormatCurrency, formatDate: localeFormatDate } = useFormatting();
+
+let debounceTimeout: ReturnType<typeof setTimeout> | undefined;
 
 const isDialogOpen = computed({
     get: () => props.isOpen,
@@ -123,10 +129,9 @@ watch(searchQuery, (newQuery) => {
 });
 
 const handleKeydown = (event: KeyboardEvent) => {
-    if (!hasResults.value) return;
-
     switch (event.key) {
         case 'ArrowDown':
+            if (!hasResults.value) return;
             event.preventDefault();
             selectedIndex.value = Math.min(
                 selectedIndex.value + 1,
@@ -134,12 +139,13 @@ const handleKeydown = (event: KeyboardEvent) => {
             );
             break;
         case 'ArrowUp':
+            if (!hasResults.value) return;
             event.preventDefault();
             selectedIndex.value = Math.max(selectedIndex.value - 1, -1);
             break;
         case 'Enter':
             event.preventDefault();
-            if (selectedIndex.value >= 0) {
+            if (hasResults.value && selectedIndex.value >= 0) {
                 selectResult(allResults.value[selectedIndex.value]);
             }
             break;
@@ -163,31 +169,23 @@ const closeDialog = () => {
 };
 
 const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-    }).format(amount);
+    return localeFormatCurrency(amount, { id: 0, code: currency, symbol: currency, name: currency });
 };
 
 const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
+    return localeFormatDate(dateString);
 };
 
 const getTransactionTypeColor = (type: string) => {
     switch (type) {
         case 'income':
-            return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+            return 'bg-secondary/50 text-secondary-foreground';
         case 'expense':
-            return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+            return 'bg-secondary/50 text-secondary-foreground';
         case 'transfer':
-            return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+            return 'bg-secondary/50 text-secondary-foreground';
         default:
-            return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+            return 'bg-secondary/50 text-secondary-foreground';
     }
 };
 
@@ -200,11 +198,11 @@ onUnmounted(() => {
     clearTimeout(debounceTimeout);
 });
 
-watch(isDialogOpen, (isOpen) => {
+watch(isDialogOpen, async (isOpen) => {
     if (isOpen) {
-        setTimeout(() => {
-            searchInput.value?.focus();
-        }, 100);
+        await nextTick();
+        await nextTick();
+        searchInput.value?.focus();
     }
 });
 </script>
@@ -215,25 +213,24 @@ watch(isDialogOpen, (isOpen) => {
             <DialogHeader class="px-6 py-4 border-b">
                 <DialogTitle class="flex items-center gap-2">
                     <Search class="h-5 w-5" />
-                    Search Accounts & Transactions
+                    {{ t('search.title') }}
                 </DialogTitle>
             </DialogHeader>
 
             <div class="px-6 py-4">
                 <div class="relative">
-                    <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Search class="absolute ltr:left-3 rtl:right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         ref="searchInput"
                         v-model="searchQuery"
-                        placeholder="Search accounts, transactions, descriptions..."
-                        class="pl-10 pr-10"
-                        @keydown="handleKeydown"
+                        :placeholder="t('search.placeholder')"
+                        class="ltr:pl-10 ltr:pr-10 rtl:pr-10 rtl:pl-10"
                     />
                     <Button
                         v-if="searchQuery"
                         variant="ghost"
                         size="icon"
-                        class="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2"
+                        class="absolute ltr:right-1 rtl:left-1 top-1/2 h-6 w-6 -translate-y-1/2"
                         @click="searchQuery = ''"
                     >
                         <X class="h-4 w-4" />
@@ -245,7 +242,7 @@ watch(isDialogOpen, (isOpen) => {
                 <!-- Loading State -->
                 <div v-if="isLoading" class="flex items-center justify-center py-8">
                     <LoadingSpinner class="h-6 w-6" />
-                    <span class="ml-2 text-sm text-muted-foreground">Searching...</span>
+                    <span class="ltr:ml-2 rtl:mr-2 text-sm text-muted-foreground">{{ t('search.searching') }}</span>
                 </div>
 
                 <!-- No Results -->
@@ -255,10 +252,10 @@ watch(isDialogOpen, (isOpen) => {
                 >
                     <Search class="h-12 w-12 text-muted-foreground mb-4" />
                     <p class="text-sm text-muted-foreground">
-                        No results found for "{{ searchQuery }}"
+                        {{ t('search.no_results', { query: searchQuery }) }}
                     </p>
                     <p class="text-xs text-muted-foreground mt-1">
-                        Try searching for account names or transaction descriptions
+                        {{ t('search.no_results_hint') }}
                     </p>
                 </div>
 
@@ -266,10 +263,10 @@ watch(isDialogOpen, (isOpen) => {
                 <div v-else-if="hasResults" class="space-y-4 px-6 pb-6">
                     <!-- Accounts Section -->
                     <div v-if="searchResults!.accounts.length > 0">
-                        <h3 class="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3">
-                            <CreditCard class="h-4 w-4" />
-                            Accounts ({{ searchResults!.accounts.length }})
-                        </h3>
+                            <h3 class="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3">
+                                <CreditCard class="h-4 w-4" />
+                                {{ t('search.accounts_section', { count: searchResults!.accounts.length }) }}
+                            </h3>
                         <div class="space-y-2">
                             <div
                                 v-for="(account, index) in searchResults!.accounts"
@@ -293,7 +290,7 @@ watch(isDialogOpen, (isOpen) => {
                                         {{ account.description }}
                                     </p>
                                 </div>
-                                <div class="text-right">
+                                <div class="ltr:text-right rtl:text-left">
                                     <p class="font-medium">
                                         {{ formatCurrency(account.balance!, account.currency) }}
                                     </p>
@@ -307,10 +304,10 @@ watch(isDialogOpen, (isOpen) => {
 
                     <!-- Transactions Section -->
                     <div v-if="searchResults!.transactions.length > 0">
-                        <h3 class="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3">
-                            <ArrowUpDown class="h-4 w-4" />
-                            Transactions ({{ searchResults!.transactions.length }})
-                        </h3>
+                            <h3 class="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3">
+                                <ArrowUpDown class="h-4 w-4" />
+                                {{ t('search.transactions_section', { count: searchResults!.transactions.length }) }}
+                            </h3>
                         <div class="space-y-2">
                             <div
                                 v-for="(transaction, index) in searchResults!.transactions"
@@ -345,7 +342,7 @@ watch(isDialogOpen, (isOpen) => {
                                         {{ transaction.description }}
                                     </p>
                                 </div>
-                                <div class="text-right">
+                                <div class="ltr:text-right rtl:text-left">
                                     <p class="font-medium flex items-center gap-1">
                                         <DollarSign class="h-4 w-4" />
                                         {{ formatCurrency(transaction.amount!, transaction.currency) }}
@@ -363,10 +360,10 @@ watch(isDialogOpen, (isOpen) => {
                 >
                     <Search class="h-12 w-12 text-muted-foreground mb-4" />
                     <p class="text-sm text-muted-foreground">
-                        Start typing to search accounts and transactions
+                        {{ t('search.empty_title') }}
                     </p>
                     <p class="text-xs text-muted-foreground mt-1">
-                        Use ↑↓ to navigate, Enter to select, Esc to close
+                        {{ t('search.empty_hint') }}
                     </p>
                 </div>
             </div>

@@ -39,6 +39,7 @@ import type { BreadcrumbItem, NavItem } from '@/types';
 import { InertiaLinkProps, Link, usePage, router } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { useFormatting } from '@/composables/useFormatting';
 
 interface Props {
     breadcrumbs?: BreadcrumbItem[];
@@ -83,6 +84,8 @@ const searchResults = ref<SearchResults>({
     accounts: [],
     transactions: []
 });
+
+const { formatCurrency: localeFormatCurrency } = useFormatting();
 
 let debounceTimeout: number = 0;
 
@@ -142,10 +145,7 @@ const navigateToTransaction = (transactionId: number) => {
 };
 
 const formatCurrency = (amount: number, currencyCode: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currencyCode
-    }).format(amount);
+    return localeFormatCurrency(amount, { id: 0, code: currencyCode, symbol: currencyCode, name: currencyCode });
 };
 
 const isSearchOpen = ref(false);

@@ -9,23 +9,31 @@ import { edit as editProfile } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
+import { useI18n } from 'vue-i18n';
+import { User, Key, ShieldCheck, Palette } from 'lucide-vue-next';
+
+const { t } = useI18n();
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Profile',
+        title: t('settings.profile'),
         href: editProfile(),
+        icon: User,
     },
     {
-        title: 'Password',
+        title: t('settings.password'),
         href: editPassword(),
+        icon: Key,
     },
     {
-        title: 'Two-Factor Auth',
+        title: t('settings.two_factor'),
         href: show(),
+        icon: ShieldCheck,
     },
     {
-        title: 'Appearance',
+        title: t('settings.appearance'),
         href: editAppearance(),
+        icon: Palette,
     },
 ];
 
@@ -35,11 +43,11 @@ const currentPath = typeof window !== undefined ? window.location.pathname : '';
 <template>
     <div class="px-4 py-6">
         <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
+            :title="t('settings.title')"
+            :description="t('settings.description')"
         />
 
-        <div class="flex flex-col lg:flex-row lg:space-x-12">
+        <div class="flex flex-col lg:flex-row rtl:lg:flex-row lg:gap-12">
             <aside class="w-full max-w-xl lg:w-48">
                 <nav class="flex flex-col space-y-1 space-x-0">
                     <Button
@@ -48,12 +56,12 @@ const currentPath = typeof window !== undefined ? window.location.pathname : '';
                         variant="ghost"
                         :class="[
                             'w-full justify-start',
-                            { 'bg-muted': urlIsActive(item.href, currentPath) },
+                            { 'bg-accent/50': urlIsActive(item.href, currentPath) },
                         ]"
                         as-child
                     >
                         <Link :href="item.href">
-                            <component :is="item.icon" class="h-4 w-4" />
+                            <component :is="item.icon" class="me-2 h-4 w-4" />
                             {{ item.title }}
                         </Link>
                     </Button>

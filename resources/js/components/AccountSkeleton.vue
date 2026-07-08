@@ -15,7 +15,7 @@ const props = withDefaults(defineProps<AccountSkeletonProps>(), {
   <div class="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-max">
     <Card v-for="i in count" :key="i" class="overflow-hidden h-fit max-h-[350px] flex flex-col">
       <!-- Header with gradient background -->
-      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-3 py-1.5 flex-shrink-0">
+      <div class="bg-card px-3 py-1.5 flex-shrink-0">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1">
             <Skeleton class="w-3 h-3 bg-slate-600" />

@@ -12,16 +12,12 @@ export function useLocale() {
   const setLocale = (newLocale: string) => {
     if (availableLocales.includes(newLocale)) {
       // Send request to Laravel to update session
+      // Save locale on server, then do a full page refresh to
+      // ensure all translations from both server and client are reloaded
       router.post('/locale', { locale: newLocale }, {
-        preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
-          // Update frontend locale
-          locale.value = newLocale
-          
-          // Update document direction and lang
-          document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr'
-          document.documentElement.lang = newLocale
+          window.location.reload()
         }
       })
     }
