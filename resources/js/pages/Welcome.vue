@@ -36,19 +36,19 @@ onUnmounted(() => window.removeEventListener('mousemove', handleMouse));
           <div class="flex aspect-square size-8 items-center justify-center rounded-md bg-primary">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet-icon w-5 h-5 text-white"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>
           </div>
-          <span class="text-lg font-bold tracking-tight">Money Accounts</span>
+          <span class="text-sm sm:text-lg font-bold tracking-tight">Money Accounts</span>
         </Link>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
           <template v-if="$page.props.auth.user">
-            <Link :href="dashboard()" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30">
+            <Link :href="dashboard()" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30">
               Dashboard
             </Link>
           </template>
           <template v-else>
-            <Link :href="login()" class="text-gray-400 hover:text-white px-4 py-2.5 text-sm font-medium transition-colors">
+            <Link :href="login()" class="text-gray-400 hover:text-white px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors">
               Sign In
             </Link>
-            <Link :href="register()" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30">
+            <Link :href="register()" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30">
               Get Started
             </Link>
           </template>
@@ -65,21 +65,21 @@ onUnmounted(() => window.removeEventListener('mousemove', handleMouse));
               <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
               Personal Finance Manager
             </div>
-            <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
+            <h1 class="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
               Take Control of Your
               <br>
               <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
                 Financial World
               </span>
             </h1>
-            <p class="text-lg md:text-xl text-gray-400 leading-relaxed max-w-xl">
+            <p class="text-sm sm:text-lg md:text-xl text-gray-400 leading-relaxed max-w-xl">
               Manage multiple accounts, track every transaction, and gain real-time insight into your finances — in one beautiful, secure platform.
             </p>
             <div class="flex flex-col sm:flex-row gap-4">
               <Link
                 v-if="!$page.props.auth.user"
                 :href="register()"
-                class="group relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-2xl shadow-blue-600/25 hover:shadow-blue-500/40"
+                class="group relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all shadow-2xl shadow-blue-600/25 hover:shadow-blue-500/40"
               >
                 Start Managing Today
                 <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -87,12 +87,12 @@ onUnmounted(() => window.removeEventListener('mousemove', handleMouse));
               <Link
                 v-else
                 :href="dashboard()"
-                class="group relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-2xl shadow-blue-600/25 hover:shadow-blue-500/40"
+                class="group relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all shadow-2xl shadow-blue-600/25 hover:shadow-blue-500/40"
               >
                 Go to Dashboard
                 <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </Link>
-              <a href="#features" class="inline-flex items-center justify-center gap-2 border border-white/10 hover:border-white/25 text-gray-300 hover:text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all">
+              <a href="#features" class="inline-flex items-center justify-center gap-2 border border-white/10 hover:border-white/25 text-gray-300 hover:text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all">
                 Explore Features
               </a>
             </div>
@@ -122,17 +122,17 @@ onUnmounted(() => window.removeEventListener('mousemove', handleMouse));
             <div class="relative bg-[#0C1123] border border-white/[0.06] rounded-3xl p-8 shadow-2xl">
               <div class="space-y-6">
                 <div class="flex items-center justify-between">
-                  <h3 class="text-lg font-semibold">Account Overview</h3>
+                  <h3 class="text-base sm:text-lg font-semibold">Account Overview</h3>
                   <span class="text-sm text-gray-500">Live</span>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div class="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/10 rounded-2xl p-5">
                     <div class="text-sm text-gray-400 mb-1">Total Balance</div>
-                    <div class="text-3xl font-bold text-white tabular-nums">$12,450</div>
+                    <div class="text-2xl sm:text-3xl font-bold text-white tabular-nums">$12,450</div>
                   </div>
                   <div class="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/10 rounded-2xl p-5">
                     <div class="text-sm text-gray-400 mb-1">This Month</div>
-                    <div class="text-3xl font-bold text-emerald-400 tabular-nums">+$1,250</div>
+                    <div class="text-2xl sm:text-3xl font-bold text-emerald-400 tabular-nums">+$1,250</div>
                   </div>
                 </div>
                 <div class="space-y-3">
@@ -183,19 +183,19 @@ onUnmounted(() => window.removeEventListener('mousemove', handleMouse));
       <div class="max-w-7xl mx-auto px-6 py-12">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div class="text-center">
-            <div class="text-3xl font-bold text-white tabular-nums">$128M+</div>
+            <div class="text-2xl sm:text-3xl font-bold text-white tabular-nums">$128M+</div>
             <div class="text-sm text-gray-500 mt-1">Managed Assets</div>
           </div>
           <div class="text-center">
-            <div class="text-3xl font-bold text-white tabular-nums">52K+</div>
+            <div class="text-2xl sm:text-3xl font-bold text-white tabular-nums">52K+</div>
             <div class="text-sm text-gray-500 mt-1">Active Users</div>
           </div>
           <div class="text-center">
-            <div class="text-3xl font-bold text-white tabular-nums">98.5%</div>
+            <div class="text-2xl sm:text-3xl font-bold text-white tabular-nums">98.5%</div>
             <div class="text-sm text-gray-500 mt-1">Uptime</div>
           </div>
           <div class="text-center">
-            <div class="text-3xl font-bold text-white tabular-nums">24</div>
+            <div class="text-2xl sm:text-3xl font-bold text-white tabular-nums">24</div>
             <div class="text-sm text-gray-500 mt-1">Currencies Supported</div>
           </div>
         </div>
@@ -209,11 +209,11 @@ onUnmounted(() => window.removeEventListener('mousemove', handleMouse));
           <div class="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 text-sm text-blue-400">
             Features
           </div>
-          <h2 class="text-3xl md:text-5xl font-bold tracking-tight">
+          <h2 class="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight">
             Everything You Need to
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Own Your Finances</span>
           </h2>
-          <p class="text-lg text-gray-400 max-w-2xl mx-auto">
+          <p class="text-sm sm:text-lg text-gray-400 max-w-2xl mx-auto">
             From multi-account management to detailed reporting, get a complete picture of your financial health.
           </p>
         </div>
@@ -222,42 +222,42 @@ onUnmounted(() => window.removeEventListener('mousemove', handleMouse));
             <div class="w-12 h-12 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border border-blue-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M2 20V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M6 12h.01M6 16h.01M10 12h8M10 16h8"/></svg>
             </div>
-            <h3 class="text-xl font-semibold mb-3">Multi-Account Management</h3>
+            <h3 class="text-lg sm:text-xl font-semibold mb-3">Multi-Account Management</h3>
             <p class="text-gray-400 leading-relaxed">Create and manage checking, savings, credit, and investment accounts all in one place. Switch between them seamlessly.</p>
           </div>
           <div class="group bg-[#0C1123] border border-white/[0.06] hover:border-blue-500/30 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/5">
             <div class="w-12 h-12 bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
-            <h3 class="text-xl font-semibold mb-3">Transaction Tracking</h3>
+            <h3 class="text-lg sm:text-xl font-semibold mb-3">Transaction Tracking</h3>
             <p class="text-gray-400 leading-relaxed">Record income, expenses, and transfers with full history. Every transaction updates your balance in real time.</p>
           </div>
           <div class="group bg-[#0C1123] border border-white/[0.06] hover:border-blue-500/30 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/5">
             <div class="w-12 h-12 bg-gradient-to-br from-emerald-600/20 to-teal-600/20 border border-emerald-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
             </div>
-            <h3 class="text-xl font-semibold mb-3">Multi-Currency Support</h3>
+            <h3 class="text-lg sm:text-xl font-semibold mb-3">Multi-Currency Support</h3>
             <p class="text-gray-400 leading-relaxed">Handle multiple currencies with live conversion rates. Perfect for international accounts and travelers.</p>
           </div>
           <div class="group bg-[#0C1123] border border-white/[0.06] hover:border-blue-500/30 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/5">
             <div class="w-12 h-12 bg-gradient-to-br from-amber-600/20 to-orange-600/20 border border-amber-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg>
             </div>
-            <h3 class="text-xl font-semibold mb-3">Dashboard & Analytics</h3>
+            <h3 class="text-lg sm:text-xl font-semibold mb-3">Dashboard & Analytics</h3>
             <p class="text-gray-400 leading-relaxed">Visual dashboards show your financial health at a glance. Track trends, monitor balances, and get actionable insights.</p>
           </div>
           <div class="group bg-[#0C1123] border border-white/[0.06] hover:border-blue-500/30 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/5">
             <div class="w-12 h-12 bg-gradient-to-br from-red-600/20 to-rose-600/20 border border-red-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17 1 1 17"/><path d="M9 1v8H1"/><path d="M23 7 7 23"/><path d="M15 23v-8h8"/></svg>
             </div>
-            <h3 class="text-xl font-semibold mb-3">Account Transfers</h3>
+            <h3 class="text-lg sm:text-xl font-semibold mb-3">Account Transfers</h3>
             <p class="text-gray-400 leading-relaxed">Transfer funds between accounts instantly. Automatic balance updates and a complete transfer history keep you in control.</p>
           </div>
           <div class="group bg-[#0C1123] border border-white/[0.06] hover:border-blue-500/30 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/5">
             <div class="w-12 h-12 bg-gradient-to-br from-indigo-600/20 to-violet-600/20 border border-indigo-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10"/></svg>
             </div>
-            <h3 class="text-xl font-semibold mb-3">Arabic & English RTL</h3>
+            <h3 class="text-lg sm:text-xl font-semibold mb-3">Arabic & English RTL</h3>
             <p class="text-gray-400 leading-relaxed">Full support for both English and Arabic with proper RTL layout. Built for a global audience from day one.</p>
           </div>
         </div>
@@ -269,31 +269,31 @@ onUnmounted(() => window.removeEventListener('mousemove', handleMouse));
       <div class="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20" />
       <div class="absolute inset-0 bg-[#060A12] [mask-image:radial-gradient(ellipse_at_center,transparent_30%,black_70%)]" />
       <div class="relative max-w-4xl mx-auto text-center px-6">
-        <h2 class="text-3xl md:text-5xl font-bold mb-6 tracking-tight">
+        <h2 class="text-2xl sm:text-3xl md:text-5xl font-bold mb-6 tracking-tight">
           Ready to Take Control?
         </h2>
-        <p class="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
+        <p class="text-sm sm:text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
           Join thousands managing their money with confidence. Get started free in under a minute.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             v-if="!$page.props.auth.user"
             :href="register()"
-            class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-2xl shadow-blue-600/25 hover:shadow-blue-500/40"
+            class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all shadow-2xl shadow-blue-600/25 hover:shadow-blue-500/40"
           >
             Get Started Free
           </Link>
           <Link
             v-else
             :href="dashboard()"
-            class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-2xl shadow-blue-600/25 hover:shadow-blue-500/40"
+            class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all shadow-2xl shadow-blue-600/25 hover:shadow-blue-500/40"
           >
             Go to Dashboard
           </Link>
           <Link
             v-if="!$page.props.auth.user"
             :href="login()"
-            class="border border-white/10 hover:border-white/25 text-gray-300 hover:text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all"
+            class="border border-white/10 hover:border-white/25 text-gray-300 hover:text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all"
           >
             Sign In
           </Link>
@@ -310,7 +310,7 @@ onUnmounted(() => window.removeEventListener('mousemove', handleMouse));
               <div class="flex aspect-square size-8 items-center justify-center rounded-md bg-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet-icon w-5 h-5 text-white"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>
               </div>
-              <span class="text-lg font-bold">Money Accounts</span>
+              <span class="text-base sm:text-lg font-bold">Money Accounts</span>
             </div>
             <p class="text-sm text-gray-500 leading-relaxed">
               Personal finance management platform. Track, manage, and grow your money with confidence.
