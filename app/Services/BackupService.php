@@ -173,7 +173,7 @@ class BackupService
         }
     }
 
-    protected function getTableNames(): array
+    public function getTableNames(): array
     {
         $driver = DB::connection()->getDriverName();
 

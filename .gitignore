@@ -20,6 +20,8 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+/database/*.sqlite
+/backups
 /auth.json
 /.fleet
 /.idea

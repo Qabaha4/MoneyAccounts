@@ -89,7 +89,7 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Authenticated routes
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
     Route::get('report', function () {
         $user = Auth::user();
         $accounts = \App\Models\Account::with('currency')

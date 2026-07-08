@@ -12,6 +12,10 @@ class RestoreService
 {
     protected string $backupsDisk;
 
+    protected int $maxExtractFiles = 1000;
+
+    protected int $maxExtractSizeBytes = 500 * 1024 * 1024;
+
     public function __construct(protected BackupService $backupService)
     {
         $this->backupsDisk = 'backups';
@@ -43,6 +47,9 @@ class RestoreService
             if ($zip->open($zipPath) !== true) {
                 throw new \RuntimeException('Failed to open backup archive.');
             }
+
+            $this->validateZipArchive($zip);
+
             $zip->extractTo($tempDir);
             $zip->close();
 
@@ -73,6 +80,26 @@ class RestoreService
         }
     }
 
+    protected function validateZipArchive(ZipArchive $zip): void
+    {
+        $fileCount = $zip->numFiles;
+        if ($fileCount === false || $fileCount > $this->maxExtractFiles) {
+            throw new \RuntimeException('Backup archive contains too many files (' . ($fileCount ?: 0) . '). Maximum allowed: ' . $this->maxExtractFiles);
+        }
+
+        $totalSize = 0;
+        for ($i = 0; $i < $fileCount; $i++) {
+            $stat = $zip->statIndex($i);
+            if ($stat === false) {
+                throw new \RuntimeException('Failed to read archive entry at index ' . $i);
+            }
+            $totalSize += $stat['size'];
+            if ($totalSize > $this->maxExtractSizeBytes) {
+                throw new \RuntimeException('Backup archive uncompressed size exceeds maximum allowed (' . number_format($this->maxExtractSizeBytes / 1024 / 1024) . ' MB).');
+            }
+        }
+    }
+
     protected function restoreDatabase(string $jsonPath): void
     {
         if (!file_exists($jsonPath)) {
@@ -92,6 +119,13 @@ class RestoreService
         $tables = $data['tables'] ?? [];
         if (empty($tables)) {
             throw new \RuntimeException('Database backup contains no table data.');
+        }
+
+        $allowedTables = $this->backupService->getTableNames();
+        foreach (array_keys($tables) as $tableName) {
+            if (!in_array($tableName, $allowedTables, true)) {
+                throw new \RuntimeException("Invalid table '{$tableName}' found in backup. Table does not exist in the current database schema.");
+            }
         }
 
         $driver = DB::connection()->getDriverName();

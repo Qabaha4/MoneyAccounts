@@ -24,6 +24,30 @@ class ListBackups extends ListRecords
                 ->icon('heroicon-m-plus-circle')
                 ->color('primary')
                 ->action(function () {
+                    $queue = config('queue.default');
+
+                    if ($queue === 'sync') {
+                        set_time_limit(0);
+
+                        try {
+                            app(BackupService::class)->create();
+
+                            Notification::make()
+                                ->title('Backup created successfully.')
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Backup creation failed')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                        }
+
+                        return;
+                    }
+
                     dispatch(new CreateBackupJob());
 
                     Notification::make()
@@ -41,7 +65,6 @@ class ListBackups extends ListRecords
                         ->label('Backup Archive (.zip)')
                         ->acceptedFileTypes(['application/zip', 'application/x-zip-compressed', 'application/zip-compressed'])
                         ->disk('backups')
-                        ->preserveFileNames()
                         ->maxSize(500 * 1024 * 1024)
                         ->required(),
                 ])
@@ -49,7 +72,31 @@ class ListBackups extends ListRecords
                     $filename = $data['file'];
                     $disk = Storage::disk('backups');
 
-                    Backup::create([
+                    if (!$disk->exists($filename)) {
+                        Notification::make()
+                            ->title('Upload failed')
+                            ->body('File not found after upload.')
+                            ->danger()
+                            ->persistent()
+                            ->send();
+                        return;
+                    }
+
+                    $mimeType = $disk->mimeType($filename);
+                    $allowedMimes = ['application/zip', 'application/x-zip-compressed', 'application/zip-compressed'];
+
+                    if (!in_array($mimeType, $allowedMimes)) {
+                        $disk->delete($filename);
+                        Notification::make()
+                            ->title('Upload failed')
+                            ->body('Only ZIP files are accepted.')
+                            ->danger()
+                            ->persistent()
+                            ->send();
+                        return;
+                    }
+
+                    $backup = Backup::create([
                         'filename' => $filename,
                         'file_path' => $filename,
                         'file_size' => $disk->size($filename),
@@ -61,7 +108,7 @@ class ListBackups extends ListRecords
 
                     Notification::make()
                         ->title('Backup uploaded successfully.')
-                        ->body($filename)
+                        ->body($backup->filename)
                         ->success()
                         ->send();
                 }),
