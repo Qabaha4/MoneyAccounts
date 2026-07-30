@@ -34,17 +34,48 @@
 
           <!-- Transaction Type -->
           <div class="space-y-2">
-            <Label for="type">{{ t('transactions.type') }}</Label>
-            <Select :key="`type-${transaction?.id || 'new'}`" v-model="form.type" required>
-              <SelectTrigger :class="{ 'border-red-500': form.errors.type }">
-                <SelectValue :placeholder="t('transactions.select_type')" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="income">{{ t('transactions.income') }}</SelectItem>
-                <SelectItem value="expense">{{ t('transactions.expense') }}</SelectItem>
-                <SelectItem value="transfer">{{ t('transactions.transfer') }}</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>{{ t('transactions.type') }}</Label>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                @click="form.type = 'income'"
+                class="relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all duration-200"
+                :class="form.type === 'income'
+                  ? 'border-[var(--income)] bg-[var(--income)]/10 shadow-sm'
+                  : 'border-border bg-card hover:border-muted-foreground/30 hover:bg-accent/50'"
+              >
+                <ArrowUpRight class="w-5 h-5" :class="form.type === 'income' ? 'text-[var(--income)]' : 'text-muted-foreground'" />
+                <span class="text-xs font-medium" :class="form.type === 'income' ? 'text-[var(--income)]' : 'text-muted-foreground'">
+                  {{ t('transactions.income') }}
+                </span>
+              </button>
+              <button
+                type="button"
+                @click="form.type = 'expense'"
+                class="relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all duration-200"
+                :class="form.type === 'expense'
+                  ? 'border-[var(--expense)] bg-[var(--expense)]/10 shadow-sm'
+                  : 'border-border bg-card hover:border-muted-foreground/30 hover:bg-accent/50'"
+              >
+                <ArrowDownLeft class="w-5 h-5" :class="form.type === 'expense' ? 'text-[var(--expense)]' : 'text-muted-foreground'" />
+                <span class="text-xs font-medium" :class="form.type === 'expense' ? 'text-[var(--expense)]' : 'text-muted-foreground'">
+                  {{ t('transactions.expense') }}
+                </span>
+              </button>
+              <button
+                type="button"
+                @click="form.type = 'transfer'"
+                class="relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all duration-200"
+                :class="form.type === 'transfer'
+                  ? 'border-[var(--transfer)] bg-[var(--transfer)]/10 shadow-sm'
+                  : 'border-border bg-card hover:border-muted-foreground/30 hover:bg-accent/50'"
+              >
+                <ArrowRightLeft class="w-5 h-5" :class="form.type === 'transfer' ? 'text-[var(--transfer)]' : 'text-muted-foreground'" />
+                <span class="text-xs font-medium" :class="form.type === 'transfer' ? 'text-[var(--transfer)]' : 'text-muted-foreground'">
+                  {{ t('transactions.transfer') }}
+                </span>
+              </button>
+            </div>
             <p v-if="form.errors.type" class="text-sm text-red-600">{{ form.errors.type }}</p>
           </div>
 
@@ -128,6 +159,7 @@
               id="amount"
               v-model="form.amount"
               type="number"
+              inputmode="decimal"
               step="0.01"
               min="0.01"
               placeholder="0.00"
@@ -214,7 +246,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Trash2, Save, Plus } from 'lucide-vue-next'
+import { Trash2, Save, Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft } from 'lucide-vue-next'
 import transactionRoutes from '@/routes/transactions'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import DateTimePicker from '@/components/ui/date-time-picker/DateTimePicker.vue'
@@ -287,7 +319,7 @@ const formatDateTimeForSubmission = (dateTimeLocal: string): string => {
 
 const form = useForm({
   account_id: '',
-  type: '',
+  type: 'expense',
   amount: '',
   description: '',
   transaction_date: formatDateTimeLocal(new Date()),
@@ -356,10 +388,11 @@ watch([() => props.isOpen, () => props.transaction], () => {
     const editingTx = props.transaction
     if (editingTx) {
       // Edit mode - populate with existing transaction data
-      // Use nextTick to ensure proper initialization order
+      // Set type immediately to avoid flashing the default
+      form.type = editingTx.type || ''
+      // Use nextTick for the rest to ensure proper initialization order
       nextTick(() => {
         form.account_id = editingTx.account?.id?.toString() || props.defaultAccountId?.toString() || ''
-        form.type = editingTx.type || ''
         form.amount = editingTx.amount || ''
         form.description = editingTx.description || ''
         // Format the stored datetime for datetime-local input

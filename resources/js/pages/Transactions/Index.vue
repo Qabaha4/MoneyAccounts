@@ -1,5 +1,5 @@
 <template>
-  <AppLayout :title="t('transactions.title')">
+  <AppLayout :breadcrumbs="breadcrumbs">
     <template #header>
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 class="font-bold text-xl sm:text-2xl text-foreground">
@@ -252,11 +252,7 @@
         </Card>
 
         <!-- Transactions Display -->
-        <div v-if="isLoading || isFilterLoading" class="space-y-4">
-           <TransactionSkeleton :count="6" :view-mode="viewMode" />
-         </div>
-        
-        <div v-else-if="transactions.data.length > 0">
+        <div v-if="transactions.data?.length > 0">
           <!-- Scrollable Transactions Container -->
           <div class="max-h-[600px] overflow-y-auto pr-1 space-y-3">
             <!-- Grid View -->
@@ -439,11 +435,10 @@
                 variant="outline"
                 size="sm"
                 @click="goToPage(transactions.current_page - 1)"
-                :disabled="transactions.current_page === 1 || isLoading"
+                :disabled="transactions.current_page === 1"
                 class="h-9"
               >
-                <LoadingSpinner v-if="isLoading" class="w-4 h-4" />
-                <ChevronLeft v-else class="w-4 h-4" />
+                <ChevronLeft class="w-4 h-4" />
                 <span class="hidden sm:inline ms-1">{{ t('transactions.previous') }}</span>
               </Button>
               
@@ -454,12 +449,10 @@
                   :variant="page === transactions.current_page ? 'default' : 'outline'"
                   size="sm"
                   @click="goToPage(page)"
-                  :disabled="isLoading"
                   class="min-w-[36px] h-9 text-sm"
                   :class="{'bg-primary text-primary-foreground': page === transactions.current_page}"
                 >
-                  <LoadingSpinner v-if="isLoading && page === transactions.current_page" class="w-4 h-4" />
-                  <span v-else>{{ page }}</span>
+                  <span>{{ page }}</span>
                 </Button>
               </div>
               
@@ -467,19 +460,18 @@
                 variant="outline"
                 size="sm"
                 @click="goToPage(transactions.current_page + 1)"
-                :disabled="transactions.current_page === transactions.last_page || isLoading"
+                :disabled="transactions.current_page === transactions.last_page"
                 class="h-9"
               >
                 <span class="hidden sm:inline me-1">{{ t('transactions.next') }}</span>
-                <LoadingSpinner v-if="isLoading" class="w-4 h-4" />
-                <ChevronRight v-else class="w-4 h-4" />
+                <ChevronRight class="w-4 h-4" />
               </Button>
             </div>
           </div>
         </div>
 
         <!-- Empty State -->
-        <Card v-else-if="!isLoading && !isFilterLoading" class="text-center py-12 sm:py-16">
+        <Card v-else class="text-center py-12 sm:py-16">
           <CardContent>
             <div class="max-w-md mx-auto">
               <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4 sm:mb-6">
@@ -538,8 +530,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import TransactionSkeleton from '@/components/TransactionSkeleton.vue'
+
 import { useFormatting } from '@/composables/useFormatting'
 import { 
   Receipt, Plus, Search, Filter, X, Grid, List, MoreHorizontal,
@@ -549,6 +540,9 @@ import {
 } from 'lucide-vue-next'
 import TransactionDetailModal from '@/components/TransactionDetailModal.vue'
 import TransactionModal from '@/components/TransactionModal.vue'
+import { type BreadcrumbItem } from '@/types'
+import { dashboard } from '@/routes'
+import transactionRoutes from '@/routes/transactions'
 
 interface Currency {
   id: number
@@ -604,6 +598,17 @@ const props = defineProps<Props>()
 const { t } = useI18n()
 const { formatAmount } = useFormatting()
 
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: t('dashboard.title'),
+        href: dashboard().url,
+    },
+    {
+        title: t('transactions.title'),
+        href: transactionRoutes.index().url,
+    },
+]
+
 const viewMode = ref<'grid' | 'list'>('list')
 const searchTimeout = ref<number | null>(null)
 const filtersExpanded = ref(false)
@@ -613,8 +618,6 @@ const selectedTransaction = ref<Transaction | null>(null)
 const isDeleting = ref(false)
 const isEditModalOpen = ref(false)
 const editingTransaction = ref<Transaction | null>(null)
-const isLoading = ref(false)
-const isFilterLoading = ref(false)
 
 // Helper function to format date
 const formatDateLocal = (date: Date) => {
@@ -837,13 +840,10 @@ const applyFilters = () => {
     filters.date_to = filterForm.date_to
   }
   
-  isFilterLoading.value = true
-  
   router.get('/transactions', filters, {
     preserveState: true,
     preserveScroll: true,
     onFinish: () => {
-      isFilterLoading.value = false
       // Maintain focus on search input after search completes
       if (searchInputRef.value) {
         nextTick(() => {
@@ -892,14 +892,9 @@ const goToPage = (page: number | string) => {
     filters.sort_by = filterForm.sort_by
   }
   
-  isLoading.value = true
-  
   router.get('/transactions', filters, {
     preserveState: true,
     preserveScroll: true,
-    onFinish: () => {
-      isLoading.value = false
-    }
   })
 }
 

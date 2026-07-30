@@ -59,9 +59,7 @@ interface SearchTransaction {
     account?: {
         name: string;
     };
-    currency?: {
-        code: string;
-    };
+    currency?: string;
 }
 
 interface SearchResults {
@@ -352,7 +350,7 @@ const rightNavItems: NavItem[] = [
                                             <div class="flex-1 min-w-0">
                                                 <p class="text-sm font-medium truncate">{{ transaction.description }}</p>
                                                 <p class="text-xs text-muted-foreground truncate">
-                                                    {{ transaction.account?.name }} • {{ formatCurrency(transaction.amount, transaction.currency?.code) }}
+                                                    {{ transaction.account?.name }} • {{ formatCurrency(transaction.amount, transaction.currency || 'USD') }}
                                                 </p>
                                             </div>
                                         </div>

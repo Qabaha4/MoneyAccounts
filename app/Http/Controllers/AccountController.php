@@ -8,6 +8,7 @@ use App\Http\Requests\AccountRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AccountController extends Controller
@@ -24,14 +25,35 @@ class AccountController extends Controller
         // Filter by search term
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('type', 'like', "%{$search}%")
-                    ->orWhereHas('currency', function ($cq) use ($search) {
-                        $cq->where('code', 'like', "%{$search}%")
-                            ->orWhere('name', 'like', "%{$search}%");
-                    });
+            $isMysql = DB::connection()->getDriverName() === 'mysql';
+            $ftQuery = null;
+
+            if ($isMysql) {
+                $words = preg_split('/[\s,]+/', trim($search), -1, PREG_SPLIT_NO_EMPTY);
+                $terms = [];
+                foreach ($words as $word) {
+                    $word = preg_replace('/[+\-><()~*@"\'\\\\:;!?]/', '', $word);
+                    if (strlen($word) > 0) {
+                        $terms[] = '+' . $word . '*';
+                    }
+                }
+                $ftQuery = $terms ? implode(' ', $terms) : '+' . $search . '*';
+            }
+
+            $query->where(function ($q) use ($search, $isMysql, $ftQuery) {
+                if ($isMysql && $ftQuery) {
+                    $q->whereRaw('MATCH(name, description) AGAINST(? IN BOOLEAN MODE)', [$ftQuery])
+                      ->orWhere('name', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+                } else {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+                }
+                $q->orWhere('type', 'like', "%{$search}%")
+                  ->orWhereHas('currency', function ($cq) use ($search) {
+                      $cq->where('code', 'like', "%{$search}%")
+                          ->orWhere('name', 'like', "%{$search}%");
+                  });
             });
         }
 

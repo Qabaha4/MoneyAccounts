@@ -1,6 +1,8 @@
 {
   "name": "Money Accounts",
   "short_name": "Money Accounts",
+  "start_url": "/dashboard",
+  "scope": "/",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

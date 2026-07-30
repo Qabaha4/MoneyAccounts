@@ -4,7 +4,8 @@
       <!-- Print-Only Report Header -->
       <div class="print-only-report-header">
         <table class="w-full">
-          <tr>
+          <thead>
+            <tr>
             <td class="w-1/2">
               <div class="flex items-center gap-3">
                 <svg viewBox="0 0 36 36" width="32" height="32" fill="none">
@@ -24,6 +25,7 @@
               <div class="text-xs text-gray-400">{{ formatDate(startDate) }} – {{ formatDate(endDate) }}</div>
             </td>
           </tr>
+          </thead>
         </table>
         <div class="h-px bg-gray-300 my-4"></div>
       </div>

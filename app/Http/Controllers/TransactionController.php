@@ -7,6 +7,7 @@ use App\Models\Account;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class TransactionController extends Controller
@@ -49,15 +50,33 @@ class TransactionController extends Controller
         // Filter by search term if specified
         if ($request->filled('search')) {
             $searchTerm = $request->search;
-            $baseQuery->where(function ($q) use ($searchTerm) {
-                $q->where('description', 'like', "%{$searchTerm}%")
-                    ->orWhere('amount', 'like', "%{$searchTerm}%")
-                    ->orWhereHas('account', function ($accountQuery) use ($searchTerm) {
-                        $accountQuery->where('name', 'like', "%{$searchTerm}%");
-                    })
-                    ->orWhereHas('transferToAccount', function ($transferAccountQuery) use ($searchTerm) {
-                        $transferAccountQuery->where('name', 'like', "%{$searchTerm}%");
-                    });
+            $isMysql = DB::connection()->getDriverName() === 'mysql';
+            $ftQuery = null;
+
+            if ($isMysql) {
+                $words = preg_split('/[\s,]+/', trim($searchTerm), -1, PREG_SPLIT_NO_EMPTY);
+                $terms = [];
+                foreach ($words as $word) {
+                    $word = preg_replace('/[+\-><()~*@"\'\\\\:;!?]/', '', $word);
+                    if (strlen($word) > 0) {
+                        $terms[] = '+' . $word . '*';
+                    }
+                }
+                $ftQuery = $terms ? implode(' ', $terms) : '+' . $searchTerm . '*';
+            }
+
+            $baseQuery->where(function ($q) use ($searchTerm, $isMysql, $ftQuery) {
+                if ($isMysql && $ftQuery) {
+                    $q->whereRaw('MATCH(description, notes, category, reference_number) AGAINST(? IN BOOLEAN MODE)', [$ftQuery]);
+                }
+                $q->orWhere('description', 'like', "%{$searchTerm}%")
+                  ->orWhere('amount', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('account', function ($accountQuery) use ($searchTerm) {
+                      $accountQuery->where('name', 'like', "%{$searchTerm}%");
+                  })
+                  ->orWhereHas('transferToAccount', function ($transferAccountQuery) use ($searchTerm) {
+                      $transferAccountQuery->where('name', 'like', "%{$searchTerm}%");
+                  });
             });
         }
 

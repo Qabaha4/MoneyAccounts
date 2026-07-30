@@ -1,17 +1,8 @@
 <template>
   <AppLayout :breadcrumbs="breadcrumbs">
     <template #header>
-      <!-- Error Alert -->
-      <Alert v-if="error" variant="destructive" class="mb-6">
-        <AlertCircle class="h-4 w-4" />
-        <AlertDescription>{{ error }}</AlertDescription>
-      </Alert>
-
       <div class="flex items-center justify-between gap-2 py-0.5">
-        <div v-if="loading">
-          <Skeleton class="h-8 w-48" />
-        </div>
-        <h2 v-else class="font-semibold text-base sm:text-lg text-foreground truncate">
+        <h2 class="font-semibold text-base sm:text-lg text-foreground truncate">
           {{ account.name }}
         </h2>
         <div class="flex items-center gap-1">
@@ -100,18 +91,7 @@
               />
             </div>
 
-            <div v-if="loading" class="space-y-3">
-              <div v-for="i in 3" :key="i" class="flex items-center gap-3 p-3 border border-border/50 rounded-xl">
-                <Skeleton class="h-12 w-12 rounded-xl" />
-                <div class="flex-1 space-y-2">
-                  <Skeleton class="h-4 w-32" />
-                  <Skeleton class="h-3 w-24" />
-                </div>
-                <Skeleton class="h-5 w-20" />
-              </div>
-            </div>
-
-            <div v-else-if="filteredTransactions.length > 0" class="space-y-2">
+            <div v-if="filteredTransactions.length > 0" class="space-y-2">
               <div 
                 v-for="transaction in filteredTransactions" 
                 :key="transaction.id"
@@ -194,7 +174,7 @@
               </Button>
             </div>
 
-            <div v-if="!loading && filteredTransactions.length === 0" class="text-center py-12">
+            <div v-if="filteredTransactions.length === 0" class="text-center py-12">
               <div class="rounded-full w-16 h-16 bg-secondary/50 flex items-center justify-center mx-auto mb-4">
                 <component :is="searchQuery.trim() ? Search : Receipt" class="w-8 h-8 text-muted-foreground" />
               </div>
@@ -240,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -248,10 +228,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { Input } from '@/components/ui/input'
-import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, AlertCircle, Search, Printer, Loader2 } from 'lucide-vue-next'
+import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, Search, Printer, Loader2 } from 'lucide-vue-next'
 import accounts from '@/routes/accounts'
 import transactions from '@/routes/transactions'
 import TransactionModal from '@/components/TransactionModal.vue'
@@ -326,8 +305,6 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ]
 
-const loading = ref(false)
-const error = ref<string | null>(null)
 const isTransactionModalOpen = ref(false)
 const editingTransaction = ref<Transaction | null>(null)
 const isAccountModalOpen = ref(false)
@@ -392,15 +369,6 @@ const monthlyTransactionsCount = computed(() => {
   }).length
 })
 
-const handleError = (errorMessage: string) => {
-  error.value = errorMessage
-  console.error('Account Show Error:', errorMessage)
-}
-
-const setLoading = (loadingState: boolean) => {
-  loading.value = loadingState
-}
-
 const getTransactionVariant = (type: string) => {
   switch (type) {
     case 'income':
@@ -460,20 +428,6 @@ const getEffectiveAmount = (transaction: Transaction) => {
 const formatDate = (dateString: string) => {
   return fmtDateTime(dateString)
 }
-
-onMounted(() => {
-  if (!props.account) {
-    handleError('Account data not found')
-    return
-  }
-
-  if (!props.account.currency) {
-    handleError('Account currency information is missing')
-    return
-  }
-
-  error.value = null
-})
 
 const loadMoreTransactions = () => {
   if (loadingMore.value || !hasMore.value) return

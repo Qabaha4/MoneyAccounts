@@ -1,5 +1,5 @@
 <template>
-  <AppLayout :title="t('accounts.title')">
+  <AppLayout :breadcrumbs="breadcrumbs">
     <template #header>
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 class="font-semibold text-xl text-foreground leading-tight">
@@ -185,13 +185,8 @@
           </CardContent>
         </Card>
 
-        <!-- Loading State -->
-        <div v-if="isLoading || isRefreshing">
-          <AccountSkeleton :count="6" />
-        </div>
-
         <!-- Accounts Grid -->
-        <div v-else-if="props.accounts.length > 0" class="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-max">
+        <div v-if="props.accounts?.length > 0" class="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-max">
           <Card 
             v-for="account in props.accounts" 
             :key="account.id" 
@@ -273,7 +268,7 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="!isLoading && !isRefreshing" class="flex items-center justify-center py-16">
+        <div v-else class="flex items-center justify-center py-16">
           <div class="text-center py-8 px-4">
             <div class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-secondary/50 rounded-full flex items-center justify-center mb-4">
               <component :is="hasActiveFilters ? Search : Wallet" class="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
@@ -309,7 +304,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, nextTick } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
@@ -324,12 +319,24 @@ import { useFormatting } from '@/composables/useFormatting'
 import { useAccountType } from '@/composables/useAccountType'
 import accountRoutes from '@/routes/accounts'
 import AccountFormModal from '@/components/AccountFormModal.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import AccountSkeleton from '@/components/AccountSkeleton.vue'
+
+import { type BreadcrumbItem } from '@/types'
+import { dashboard } from '@/routes'
 
 const { t } = useI18n()
 const { formatCurrency } = useFormatting()
 const { getAccountTypeStyle } = useAccountType()
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: t('dashboard.title'),
+        href: dashboard().url,
+    },
+    {
+        title: t('accounts.title'),
+        href: accountRoutes.index().url,
+    },
+]
 interface Currency {
   id: number
   code: string
@@ -370,10 +377,6 @@ const props = defineProps<{
 // Modal state
 const isModalOpen = ref(false)
 const editingAccount = ref<Account | null>(null)
-
-// Loading states
-const isLoading = ref(false)
-const isRefreshing = ref(false)
 
 // Filters state
 const filtersExpanded = ref(false)
@@ -471,14 +474,9 @@ const applyFilters = () => {
     filters.sort_by = filterForm.sort_by
   }
 
-  isRefreshing.value = true
-
   router.get('/accounts', filters, {
     preserveState: true,
     preserveScroll: true,
-    onFinish: () => {
-      isRefreshing.value = false
-    }
   })
 }
 
@@ -527,12 +525,7 @@ const openEditModal = (account: Account) => {
 }
 
 const handleModalSuccess = () => {
-  isRefreshing.value = true
-  router.reload({
-    onFinish: () => {
-      isRefreshing.value = false
-    }
-  })
+  router.reload()
 }
 
 const openPrintReport = (accountId: number) => {

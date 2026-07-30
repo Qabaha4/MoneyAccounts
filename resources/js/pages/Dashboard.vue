@@ -15,7 +15,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import TransactionDetailModal from '@/components/TransactionDetailModal.vue';
 import HeroSection from '@/components/HeroSection.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
-import DashboardSkeleton from '@/components/DashboardSkeleton.vue';
+
 import { useFormatting } from '@/composables/useFormatting';
 import { useAccountType } from '@/composables/useAccountType';
 
@@ -73,9 +73,7 @@ const isTransactionsOpen = ref(true);
 const isTransactionDetailModalOpen = ref(false);
 const selectedTransaction = ref<Transaction | null>(null);
 
-// Loading states
-const isLoading = ref(false);
-const isRefreshing = ref(false);
+
 
 // Currency selector state
 const selectedCurrency = ref<Currency | null>(null);
@@ -228,13 +226,8 @@ const handleCurrencyChange = (currency: Currency) => {
 
         <div class="py-2 sm:py-4">
             <div class="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 space-y-3 sm:space-y-5">
-                <!-- Loading State -->
-                <div v-if="isLoading || isRefreshing">
-                    <DashboardSkeleton />
-                </div>
-                
                 <!-- Dashboard Content -->
-                <div class="space-y-4" v-else>
+                <div class="space-y-4">
                     <!-- Dashboard Balance Hero -->
                     <HeroSection 
                         :main-sec-val="`${formatAmount(convertedTotalBalance)} ${selectedCurrencySymbol}`"

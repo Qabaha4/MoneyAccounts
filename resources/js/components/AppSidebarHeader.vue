@@ -25,14 +25,11 @@ const { t } = useI18n();
 // TypeScript interfaces for search results
 interface Account {
     id: number;
-    name: string;
     description?: string;
+    name: string;
     is_active?: boolean;
     balance?: number;
-    currency?: {
-        code: string;
-        symbol: string;
-    };
+    currency?: string;
 }
 
 interface SearchTransaction {
@@ -299,7 +296,7 @@ const getTransactionIcon = (type: string) => {
                                             >
                                                 {{ account.is_active ? t('common.active') : t('common.inactive') }}
                                             </Badge>
-                                            <span class="text-xs text-muted-foreground">{{ account.currency?.code || 'USD' }}</span>
+                                            <span class="text-xs text-muted-foreground">{{ account.currency || 'USD' }}</span>
                                         </div>
                                         <div v-if="account.description" class="text-xs text-muted-foreground mt-1 truncate">
                                             {{ account.description }}
@@ -312,7 +309,7 @@ const getTransactionIcon = (type: string) => {
                                             class="text-sm font-bold"
                                             :class="(account.balance || 0) >= 0 ? 'text-success' : 'text-destructive'"
                                         >
-                                            {{ formatCurrency(account.balance || 0, account.currency?.code || 'USD') }}
+                                            {{ formatCurrency(account.balance || 0, account.currency || 'USD') }}
                                         </div>
                                     </div>
                                 </div>
