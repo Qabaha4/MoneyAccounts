@@ -201,6 +201,14 @@ class TransactionController extends Controller
             }
         }
 
+        // Clear transfer-related fields if type is not transfer
+        if ($validated['type'] !== 'transfer') {
+            $validated['transfer_to_account_id'] = null;
+            $validated['exchange_rate'] = null;
+            $validated['converted_amount'] = null;
+            $validated['exchange_rate_source'] = null;
+        }
+
         // Parse ISO string from frontend (user's timezone) and convert to UTC for storage
         $validated['transaction_date'] = Carbon::parse($validated['transaction_date'])
             // ->utc()
@@ -315,6 +323,14 @@ class TransactionController extends Controller
         $validated['transaction_date'] = Carbon::parse($validated['transaction_date'])
             // ->utc()
             ->format('Y-m-d H:i:s');
+
+        // Clear transfer-related fields if type is not transfer
+        if ($validated['type'] !== 'transfer') {
+            $validated['transfer_to_account_id'] = null;
+            $validated['exchange_rate'] = null;
+            $validated['converted_amount'] = null;
+            $validated['exchange_rate_source'] = null;
+        }
 
         $transaction->update($validated);
 

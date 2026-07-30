@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\ActivityHistoryController;
 use App\Http\Controllers\TransactionController;
 
 Route::get('/', function () {
@@ -115,6 +116,9 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
 
     // Global search endpoint
     Route::get('/search', [App\Http\Controllers\SearchController::class, 'search'])->name('search');
+
+    // Activity history
+    Route::get('/activity', [App\Http\Controllers\ActivityHistoryController::class, 'index'])->name('activity.index');
 });
 
 // Admin backup download route (within Filament's middleware context)

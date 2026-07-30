@@ -8,11 +8,7 @@
             <tr>
             <td class="w-1/2">
               <div class="flex items-center gap-3">
-                <svg viewBox="0 0 36 36" width="32" height="32" fill="none">
-                  <rect x="0" y="0" width="36" height="36" rx="9" fill="url(#ph-grad)"/>
-                  <path d="M28 14v-2.5a2 2 0 0 0-2-2H10a2 2 0 0 0-2 2V14h20zM8 16v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V16H8zm10 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="white"/>
-                  <defs><linearGradient id="ph-grad" x1="0" y1="0" x2="36" y2="36"><stop stop-color="#3b82f6"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
-                </svg>
+                <img src="/favicon-16x16.svg" width="32" height="32" alt=""/>
                 <div>
                   <div class="text-lg font-bold text-gray-900">Money Accounts</div>
                   <div class="text-xs text-gray-500">Financial Report</div>
@@ -21,7 +17,7 @@
             </td>
             <td class="w-1/2 text-right">
               <div class="text-sm text-gray-700 font-semibold">{{ account.name }}</div>
-              <div class="text-xs text-gray-500">{{ user.name }} · {{ user.email }}</div>
+              <!-- <div class="text-xs text-gray-500">{{ user.name }} · {{ user.email }}</div> -->
               <div class="text-xs text-gray-400">{{ formatDate(startDate) }} – {{ formatDate(endDate) }}</div>
             </td>
           </tr>
@@ -476,10 +472,29 @@ const updateReport = () => {
     display: none !important;
   }
 
+  /* ── Hide app name from top ── */
+  /* .print-only-report-header .flex.items-center.gap-3 > div {
+    display: none !important;
+  } */
+
+  /* ── Make banner SVG bg transparent ── */
+  /* .print-only-report-header svg rect { */
+    /* fill: transparent !important; */
+  /* } */
+
+  /* ── Hide generated-on footer in print ── */
+  /* .pt-3.border-t.border-border.text-center { */
+    /* display: none !important; */
+  /* } */
+
   /* ── Page Setup ── */
   @page {
     margin: 1.2cm 0.8cm;
     size: A4;
+    @top-center { content: ""; }
+    @bottom-left { content: ""; }
+    @bottom-right { content: ""; }
+    @bottom-center { content: counter(page); font-size: 9pt; color: #6b7280; }
   }
 
   @page :first {
@@ -680,6 +695,22 @@ const updateReport = () => {
   /* ── Avoid page breaks inside cards ── */
   [class*="Card"] {
     page-break-inside: avoid;
+  }
+
+
+    thead tr {
+    background: transparent !important;
+  }
+
+  thead th {
+    /* color: white !important;
+    font-weight: 600 !important;
+    font-size: 8pt !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding: 0.5rem 0.4rem !important; */
+    border-bottom: 0px!important;
+    /* border-right: 1px solid rgba(255,255,255,0.15) !important; */
   }
 }
 </style>

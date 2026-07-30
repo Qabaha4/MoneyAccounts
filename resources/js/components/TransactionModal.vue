@@ -382,6 +382,16 @@ watch(() => form.converted_amount, () => {
   }
 })
 
+// Clear transfer fields when type changes away from 'transfer'
+watch(() => form.type, (newType) => {
+  if (newType !== 'transfer') {
+    form.transfer_to_account_id = ''
+    form.exchange_rate = ''
+    form.converted_amount = ''
+    form.exchange_rate_source = 'manual'
+  }
+})
+
 // Initialize form data when modal opens or transaction changes
 watch([() => props.isOpen, () => props.transaction], () => {
   if (props.isOpen) {

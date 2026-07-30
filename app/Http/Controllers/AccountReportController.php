@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Activity;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -93,6 +94,14 @@ class AccountReportController extends Controller
             'expense' => $allTransactions->where('type', 'expense')->count(),
             'transfer' => $allTransactions->where('type', 'transfer')->count(),
         ];
+
+        if ($request->has('export')) {
+            Activity::log('exported', $account, Auth::user(), "Exported report for account '{$account->name}'");
+        }
+
+        if ($request->has('print')) {
+            Activity::log('printed', $account, Auth::user(), "Printed report for account '{$account->name}'");
+        }
 
         return Inertia::render('Accounts/Report', [
             'account' => $account,

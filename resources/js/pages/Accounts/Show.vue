@@ -95,9 +95,12 @@
               <div 
                 v-for="transaction in filteredTransactions" 
                 :key="transaction.id"
-                class="group flex items-center gap-3 p-3 rounded-xl hover:bg-accent/30 transition-all cursor-pointer border border-border/50"
-                @click="openEditModal(transaction)"
+                :data-transaction-id="transaction.id"
+                class="group flex items-center gap-3 p-3 rounded-xl hover:bg-accent/30 transition-all cursor-pointer border border-border/50 relative overflow-hidden"
+                :class="highlightedTxId === transaction.id ? 'bg-primary/5 highlight-pulse' : ''"
+                @click="openViewModal(transaction)"
               >
+                <div v-if="highlightedTxId === transaction.id" class="absolute left-0 top-0 bottom-0 w-1 bg-primary highlight-bar" />
                 <!-- Icon -->
                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-secondary/50 flex items-center justify-center flex-shrink-0">
                   <span 
@@ -201,12 +204,23 @@
 
     <!-- Transaction Modal -->
     <TransactionModal
-      v-model:is-open="isTransactionModalOpen"
+      :is-open="isTransactionModalOpen"
       :accounts="props.accounts"
       :transaction="editingTransaction"
       :default-account-id="account.id"
       :allow-account-change="!!editingTransaction"
+      @update:is-open="isTransactionModalOpen = $event; handleEditClose($event)"
       @success="handleTransactionSuccess"
+    />
+
+    <!-- Transaction View Modal -->
+    <TransactionDetailModal
+      :is-open="isViewModalOpen"
+      :transaction="viewingTransaction"
+      hide-actions
+      allow-edit
+      @update:is-open="isViewModalOpen = $event"
+      @edit="handleViewEdit"
     />
 
     <!-- Account Edit Modal -->
@@ -220,8 +234,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { computed, ref, watch, onMounted, nextTick } from 'vue'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
@@ -234,6 +248,7 @@ import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, Search, Printer, Loade
 import accounts from '@/routes/accounts'
 import transactions from '@/routes/transactions'
 import TransactionModal from '@/components/TransactionModal.vue'
+import TransactionDetailModal from '@/components/TransactionDetailModal.vue'
 import AccountFormModal from '@/components/AccountFormModal.vue'
 import HeroSection from '@/components/HeroSection.vue'
 import { type BreadcrumbItem } from '@/types'
@@ -306,12 +321,16 @@ const breadcrumbs: BreadcrumbItem[] = [
 ]
 
 const isTransactionModalOpen = ref(false)
+const isViewModalOpen = ref(false)
 const editingTransaction = ref<Transaction | null>(null)
+const viewingTransaction = ref<Transaction | null>(null)
+const returningFromView = ref(false)
 const isAccountModalOpen = ref(false)
 const searchQuery = ref('')
 const allTransactions = ref<Transaction[]>([])
 const loadingMore = ref(false)
 const isAppendingTransactions = ref(false)
+const highlightedTxId = ref<number | null>(null)
 
 // Initialize accumulated transactions from server prop
 const currentPage = ref(props.transactionsMeta?.current_page ?? 1)
@@ -462,16 +481,49 @@ const showAllTransactions = () => {
 
 const openCreateModal = () => {
   editingTransaction.value = null
+  returningFromView.value = false
   isTransactionModalOpen.value = true
+}
+
+const openViewModal = (transaction: Transaction) => {
+  viewingTransaction.value = transaction
+  isViewModalOpen.value = true
+}
+
+const handleViewEdit = (transaction: any) => {
+  isViewModalOpen.value = false
+  editingTransaction.value = transaction
+  returningFromView.value = true
+  nextTick(() => {
+    isTransactionModalOpen.value = true
+  })
+}
+
+const handleEditClose = (open: boolean) => {
+  if (!open && returningFromView.value && viewingTransaction.value) {
+    returningFromView.value = false
+    isViewModalOpen.value = true
+  }
 }
 
 const openEditModal = (transaction: Transaction) => {
   editingTransaction.value = transaction
+  returningFromView.value = false
   isTransactionModalOpen.value = true
 }
 
 const handleTransactionSuccess = () => {
-  // Form submission already redirected and updated props; watch handles sync
+  if (returningFromView.value && editingTransaction.value) {
+    const updatedTx = props.account?.transactions?.find(
+      t => t.id === editingTransaction.value!.id
+    )
+    if (updatedTx) {
+      viewingTransaction.value = updatedTx
+    } else {
+      returningFromView.value = false
+      viewingTransaction.value = null
+    }
+  }
 }
 
 const openAccountEditModal = () => {
@@ -486,6 +538,28 @@ const navigateToAccount = (accountId: number) => {
   router.visit(accounts.show({ account: accountId }).url)
 }
 
+// Parse highlight param and scroll to transaction
+const highlightTxId = computed(() => {
+  const params = new URLSearchParams(window.location.search)
+  const id = params.get('highlight')
+  return id ? Number(id) : null
+})
+
+onMounted(async () => {
+  if (!highlightTxId.value) return
+  highlightedTxId.value = highlightTxId.value
+  await nextTick()
+  const el = document.querySelector(`[data-transaction-id="${highlightedTxId.value}"]`)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    el.classList.add('highlight-active')
+    setTimeout(() => {
+      el.classList.remove('highlight-active')
+      highlightedTxId.value = null
+    }, 4000)
+  }
+})
+
 const openPrintReport = () => {
   router.visit(`/accounts/${props.account.id}/report`)
 }
@@ -495,5 +569,45 @@ const openPrintReport = () => {
 .bg-grid-white\/\[0\.02\] {
   background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+.highlight-bar {
+  animation: barIn 0.4s ease-out;
+}
+
+.highlight-pulse {
+  animation: pulseGlow 2s ease-in-out;
+}
+
+.highlight-active {
+  box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 20px -4px hsl(var(--primary) / 0.3);
+  transition: box-shadow 0.8s ease-out;
+}
+
+.highlight-active.highlight-active {
+  animation: none;
+}
+
+@keyframes barIn {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: none;
+  }
+  20% {
+    box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 24px -4px hsl(var(--primary) / 0.35);
+  }
+  60% {
+    box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 12px -4px hsl(var(--primary) / 0.15);
+  }
 }
 </style>

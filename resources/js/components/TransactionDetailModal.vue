@@ -10,18 +10,30 @@
       </DialogDescription>
       
       <!-- Hero Section with Amount -->
-      <div class="bg-card px-8 py-10 border-b border-border/50">
-        <!-- Type Badge -->
-        <div class="flex items-center justify-between mb-6">
+      <div class="bg-card px-8 py-10 border-b border-border/50 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-primary/3 to-transparent pointer-events-none" />
+
+        <!-- Type Badge & Edit toggle -->
+        <div class="flex items-center justify-between mb-6 relative">
           <Badge 
             :variant="transaction?.type === 'income' ? 'default' : transaction?.type === 'expense' ? 'destructive' : 'secondary'"
             class="text-xs font-semibold px-3 py-1"
           >
             {{ transaction?.type?.toUpperCase() }}
           </Badge>
-          <span class="text-xs text-muted-foreground font-mono">
-            #{{ transaction?.id }}
-          </span>
+          <div class="flex items-center gap-3">
+            <button
+              v-if="allowEdit"
+              class="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors"
+              @click="$emit('edit', transaction)"
+            >
+              <Pencil class="w-3 h-3" />
+              {{ t('transactions.edit') }}
+            </button>
+            <span class="text-xs text-muted-foreground font-mono">
+              #{{ transaction?.id }}
+            </span>
+          </div>
         </div>
 
         <!-- Amount -->
@@ -81,7 +93,7 @@
               </span>
             </div>
             <div 
-              class="ps-3 flex items-center justify-between cursor-pointer hover:bg-accent/30 rounded-lg p-2 -m-2 transition-colors"
+              class="ps-3 flex items-center justify-between cursor-pointer hover:bg-accent/50 rounded-xl p-3 -m-1 transition-all border border-transparent hover:border-border/50"
               @click="transaction?.account.id && $emit('navigateToAccount', transaction.account.id)"
             >
               <div class="flex items-center gap-3">
@@ -113,7 +125,7 @@
               </span>
             </div>
             <div 
-              class="ps-3 flex items-center justify-between cursor-pointer hover:bg-accent/30 rounded-lg p-2 -m-2 transition-colors"
+              class="ps-3 flex items-center justify-between cursor-pointer hover:bg-accent/50 rounded-xl p-3 -m-1 transition-all border border-transparent hover:border-border/50"
               @click="transaction?.transfer_to_account?.id && $emit('navigateToAccount', transaction.transfer_to_account.id)"
             >
               <div class="flex items-center gap-3">
@@ -157,6 +169,16 @@
             {{ isDeleting ? 'Deleting...' : 'Delete' }}
           </Button>
         </div>
+        <div v-if="showInAccount && transaction?.account?.id" class="pt-4 border-t border-border/50">
+          <Button
+            variant="outline"
+            class="w-full h-11"
+            @click="goToAccount"
+          >
+            <ExternalLink class="w-4 h-4 me-2" />
+            Show in Account
+          </Button>
+        </div>
       </div>
     </DialogContent>
   </Dialog>
@@ -176,12 +198,14 @@ import {
   CreditCard, 
   ArrowRightLeft, 
   Edit, 
+  Pencil,
   Trash2,
   ExternalLink 
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useFormatting } from '@/composables/useFormatting'
 import { useAccountType } from '@/composables/useAccountType'
+import { router } from '@inertiajs/vue3'
 
 const { t } = useI18n()
 const { formatAmount, formatDate, formatDateFull, formatTime } = useFormatting()
@@ -219,9 +243,11 @@ interface Props {
   transaction: Transaction | null
   isDeleting?: boolean
   hideActions?: boolean
+  showInAccount?: boolean
+  allowEdit?: boolean
 }
 
-const { hideActions } = defineProps<Props>()
+const { hideActions, showInAccount, allowEdit, transaction } = defineProps<Props>()
 
 // Get the effective amount for display (converted amount for cross-currency transfers)
 const getEffectiveAmount = (transaction: Transaction | null) => {
@@ -232,6 +258,14 @@ const getEffectiveAmount = (transaction: Transaction | null) => {
   }
   
   return parseFloat(transaction.amount || '0')
+}
+
+const goToAccount = () => {
+  const accountId = transaction?.account?.id
+  const txId = transaction?.id
+  if (accountId) {
+    router.visit(`/accounts/${accountId}${txId ? `?highlight=${txId}` : ''}`)
+  }
 }
 
 defineEmits<{

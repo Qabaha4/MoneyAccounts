@@ -45,6 +45,42 @@ class Account extends Model
                 $account->user_id = Auth::id();
             }
         });
+
+        static::created(function ($account) {
+            if (Auth::check()) {
+                Activity::log('created', $account, Auth::user(), "Created account '{$account->name}'");
+            }
+        });
+
+        static::updated(function ($account) {
+            if (Auth::check()) {
+                $dirty = collect($account->getDirty())->except(['balance', 'updated_at']);
+                if ($dirty->isEmpty()) {
+                    return;
+                }
+                $changes = $dirty->mapWithKeys(fn ($new, $field) => [
+                    $field => match ($field) {
+                        'currency_id' => [
+                            'from' => optional(Currency::find($account->getOriginal($field)))->code ?? $account->getOriginal($field),
+                            'to' => optional(Currency::find($new))->code ?? $new,
+                        ],
+                        default => [
+                            'from' => $account->getOriginal($field),
+                            'to' => $new,
+                        ],
+                    },
+                ])->all();
+                Activity::log('updated', $account, Auth::user(), "Updated account '{$account->name}'", [
+                    'changes' => $changes,
+                ]);
+            }
+        });
+
+        static::deleted(function ($account) {
+            if (Auth::check()) {
+                Activity::log('deleted', $account, Auth::user(), "Deleted account '{$account->name}'");
+            }
+        });
     }
 
     /**
