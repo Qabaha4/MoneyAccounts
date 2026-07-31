@@ -265,7 +265,7 @@ interface Currency {
 }
 
 interface Transaction {
-  id: number
+  id: string
   type: 'income' | 'expense' | 'transfer'
   amount: string
   description: string
@@ -279,7 +279,7 @@ interface Transaction {
 }
 
 interface Account {
-  id: number
+  id: string
   name: string
   type: string
   balance: number
@@ -330,7 +330,7 @@ const searchQuery = ref('')
 const allTransactions = ref<Transaction[]>([])
 const loadingMore = ref(false)
 const isAppendingTransactions = ref(false)
-const highlightedTxId = ref<number | null>(null)
+const highlightedTxId = ref<string | null>(null)
 
 // Initialize accumulated transactions from server prop
 const currentPage = ref(props.transactionsMeta?.current_page ?? 1)
@@ -534,7 +534,7 @@ const handleAccountSuccess = () => {
   // Form submission already redirected and updated props; watch handles sync
 }
 
-const navigateToAccount = (accountId: number) => {
+const navigateToAccount = (accountId: string) => {
   router.visit(accounts.show({ account: accountId }).url)
 }
 
@@ -542,7 +542,7 @@ const navigateToAccount = (accountId: number) => {
 const highlightTxId = computed(() => {
   const params = new URLSearchParams(window.location.search)
   const id = params.get('highlight')
-  return id ? Number(id) : null
+  return id || null
 })
 
 onMounted(async () => {

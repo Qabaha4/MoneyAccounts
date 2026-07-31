@@ -266,7 +266,7 @@ interface Currency {
 }
 
 interface Transaction {
-  id: number
+  id: string
   type: 'income' | 'expense' | 'transfer'
   amount: string
   description: string
@@ -280,7 +280,7 @@ interface Transaction {
 }
 
 interface Account {
-  id: number
+  id: string
   name: string
   type: string
   balance: number

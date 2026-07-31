@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCustomId;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,22 @@ use Illuminate\Support\Facades\Auth;
 
 class Account extends Model
 {
-    use HasFactory;
+    use HasCustomId, HasFactory;
+
+    public static function customIdPrefix(): string
+    {
+        return 'acc-';
+    }
+
+    public static function customIdModelType(): string
+    {
+        return 'account';
+    }
+
+    public static function customIdPeriod(): string
+    {
+        return now()->format('ym');
+    }
     protected $fillable = [
         'user_id',
         'currency_id',

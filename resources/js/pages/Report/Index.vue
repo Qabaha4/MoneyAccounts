@@ -189,7 +189,7 @@ interface Currency {
 }
 
 interface Account {
-  id: number
+  id: string
   name: string
   type: string
   balance: number
@@ -217,7 +217,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ]
 
-const viewReport = (accountId: number) => {
+const viewReport = (accountId: string) => {
   router.visit(reportRoute({ account: accountId }).url)
 }
 </script>

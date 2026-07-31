@@ -24,7 +24,7 @@ class AccountRepository
     /**
      * Find account by ID for authenticated user.
      */
-    public function findById(int $id): ?Account
+    public function findById(string $id): ?Account
     {
         return $this->baseQuery()
             ->where('id', $id)
@@ -34,7 +34,7 @@ class AccountRepository
     /**
      * Find account by ID with transactions.
      */
-    public function findByIdWithTransactions(int $id): ?Account
+    public function findByIdWithTransactions(string $id): ?Account
     {
         return $this->baseQuery()
             ->with(['transactions' => function ($query) {
@@ -189,7 +189,7 @@ class AccountRepository
     /**
      * Check if account name is unique for user.
      */
-    public function isNameUnique(string $name, ?int $excludeId = null): bool
+    public function isNameUnique(string $name, ?string $excludeId = null): bool
     {
         $query = Account::where('user_id', Auth::id())
             ->where('name', $name);
@@ -308,7 +308,7 @@ class AccountRepository
     /**
      * Get accounts for transfer operations (excluding specified account).
      */
-    public function getForTransfer(int $excludeAccountId, ?int $currencyId = null): Collection
+    public function getForTransfer(string $excludeAccountId, ?int $currencyId = null): Collection
     {
         $query = $this->baseQuery()
             ->where('is_active', true)

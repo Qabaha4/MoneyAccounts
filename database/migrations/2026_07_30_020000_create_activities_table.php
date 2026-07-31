@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('subject_type');
-            $table->unsignedBigInteger('subject_id')->nullable();
+            $table->string('subject_id')->nullable();
             $table->string('action');
             $table->text('description');
             $table->json('metadata')->nullable();

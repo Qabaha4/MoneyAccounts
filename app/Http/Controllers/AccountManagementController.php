@@ -73,7 +73,7 @@ class AccountManagementController extends Controller
     /**
      * Display the specified account.
      */
-    public function show(int $id): View|JsonResponse
+    public function show(string $id): View|JsonResponse
     {
         $account = $this->accountRepository->findByIdWithTransactions($id);
 
@@ -89,7 +89,7 @@ class AccountManagementController extends Controller
     /**
      * Show the form for editing the specified account.
      */
-    public function edit(int $id): View
+    public function edit(string $id): View
     {
         $account = $this->accountRepository->findById($id);
 
@@ -106,7 +106,7 @@ class AccountManagementController extends Controller
     /**
      * Update the specified account.
      */
-    public function update(AccountRequest $request, int $id): RedirectResponse|JsonResponse
+    public function update(AccountRequest $request, string $id): RedirectResponse|JsonResponse
     {
         try {
             $account = $this->accountRepository->findById($id);
@@ -133,7 +133,7 @@ class AccountManagementController extends Controller
     /**
      * Remove the specified account.
      */
-    public function destroy(int $id): RedirectResponse|JsonResponse
+    public function destroy(string $id): RedirectResponse|JsonResponse
     {
         try {
             $account = $this->accountRepository->findById($id);
@@ -174,7 +174,7 @@ class AccountManagementController extends Controller
     /**
      * Toggle account active status.
      */
-    public function toggleStatus(int $id): JsonResponse
+    public function toggleStatus(string $id): JsonResponse
     {
         try {
             $account = $this->accountRepository->findById($id);

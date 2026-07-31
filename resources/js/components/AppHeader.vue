@@ -46,16 +46,16 @@ interface Props {
 }
 
 interface SearchAccount {
-    id: number;
+    id: string;
     name: string;
     description?: string;
 }
 
 interface SearchTransaction {
-    id: number;
+    id: string;
     description: string;
     amount: number;
-    account_id: number;
+    account_id: string;
     account?: {
         name: string;
     };
@@ -126,13 +126,13 @@ const handleSearchBlur = () => {
     }, 200);
 };
 
-const navigateToAccount = (accountId: number) => {
+const navigateToAccount = (accountId: string) => {
     router.visit(`/accounts/${accountId}`);
     isSearchFocused.value = false;
     searchQuery.value = '';
 };
 
-const navigateToTransaction = (transactionId: number) => {
+const navigateToTransaction = (transactionId: string) => {
     // Navigate to the account that contains this transaction
     const transaction = searchResults.value.transactions.find(t => t.id === transactionId);
     if (transaction?.account_id) {

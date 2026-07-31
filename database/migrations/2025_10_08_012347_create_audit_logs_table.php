@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
             $table->string('action'); // create, update, delete, restore, etc.
             $table->string('model_type'); // User, Currency, etc.
-            $table->unsignedBigInteger('model_id');
+            $table->string('model_id');
             $table->json('old_values')->nullable(); // Previous values before change
             $table->json('new_values')->nullable(); // New values after change
             $table->string('ip_address')->nullable();

@@ -507,6 +507,14 @@
       @navigateToAccount="handleNavigateToAccount"
     />
 
+    <ConfirmDialog
+      :open="showDeleteConfirm"
+      :message="t('transactions.confirm_delete')"
+      @update:open="showDeleteConfirm = $event"
+      @confirm="handleDeleteConfirmed"
+      @cancel="showDeleteConfirm = false"
+    />
+
     <!-- Transaction Edit Modal -->
     <TransactionModal
       v-model:is-open="isEditModalOpen"
@@ -540,6 +548,7 @@ import {
 } from 'lucide-vue-next'
 import TransactionDetailModal from '@/components/TransactionDetailModal.vue'
 import TransactionModal from '@/components/TransactionModal.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { type BreadcrumbItem } from '@/types'
 import { dashboard } from '@/routes'
 import transactionRoutes from '@/routes/transactions'
@@ -552,13 +561,13 @@ interface Currency {
 }
 
 interface Account {
-  id: number
+  id: string
   name: string
   currency: Currency
 }
 
 interface Transaction {
-  id: number
+  id: string
   amount: string
   type: 'income' | 'expense' | 'transfer'
   description: string | null
@@ -618,6 +627,8 @@ const selectedTransaction = ref<Transaction | null>(null)
 const isDeleting = ref(false)
 const isEditModalOpen = ref(false)
 const editingTransaction = ref<Transaction | null>(null)
+const showDeleteConfirm = ref(false)
+const transactionToDelete = ref<Transaction | null>(null)
 
 // Helper function to format date
 const formatDateLocal = (date: Date) => {
@@ -940,13 +951,17 @@ const handleEditTransaction = (transaction: Transaction) => {
   isEditModalOpen.value = true
 }
 
-const handleDeleteTransaction = async (transaction: Transaction) => {
-  if (!confirm(t('transactions.confirm_delete'))) {
-    return
-  }
-  
+const handleDeleteTransaction = (transaction: Transaction) => {
+  transactionToDelete.value = transaction
+  showDeleteConfirm.value = true
+}
+
+const handleDeleteConfirmed = async () => {
+  const transaction = transactionToDelete.value
+  if (!transaction) return
+  showDeleteConfirm.value = false
   isDeleting.value = true
-  
+
   try {
     await router.delete(`/transactions/${transaction.id}`, {
       onSuccess: () => {
@@ -963,7 +978,7 @@ const handleDeleteTransaction = async (transaction: Transaction) => {
   }
 }
 
-const handleNavigateToAccount = (accountId: number) => {
+const handleNavigateToAccount = (accountId: string) => {
   isModalOpen.value = false
   router.visit(`/accounts/${accountId}`)
 }

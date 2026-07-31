@@ -359,9 +359,9 @@ import { dashboard } from '@/routes'
 const { t } = useI18n()
 
 interface Activity {
-  id: number
+  id: string
   subject_type: string
-  subject_id: number | null
+  subject_id: string | null
   action: string
   description: string
   metadata: Record<string, any> | null

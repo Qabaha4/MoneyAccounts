@@ -29,7 +29,7 @@ interface Currency {
 }
 
 interface Account {
-    id: number;
+    id: string;
     name: string;
     description: string | null;
     type: string;
@@ -41,7 +41,7 @@ interface Account {
 }
 
 interface Transaction {
-    id: number;
+    id: string;
     type: 'income' | 'expense' | 'transfer';
     amount: string;
     description: string;
@@ -166,7 +166,7 @@ const openTransactionDetail = (transaction: Transaction) => {
     isTransactionDetailModalOpen.value = true;
 };
 
-const handleNavigateToAccount = (accountId: number) => {
+const handleNavigateToAccount = (accountId: string) => {
     window.location.href = accounts.show({ account: accountId }).url;
 };
 

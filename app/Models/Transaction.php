@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCustomId;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,7 +12,22 @@ use Illuminate\Support\Facades\Auth;
 
 class Transaction extends Model
 {
-    use HasFactory;
+    use HasCustomId, HasFactory;
+
+    public static function customIdPrefix(): string
+    {
+        return 'trn-';
+    }
+
+    public static function customIdModelType(): string
+    {
+        return 'transaction';
+    }
+
+    public static function customIdPeriod(): string
+    {
+        return now()->format('ymd');
+    }
 
     protected $fillable = [
         'user_id',

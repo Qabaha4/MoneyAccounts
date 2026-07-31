@@ -48,7 +48,7 @@ class AccountService
     /**
      * Get a specific account by ID for the authenticated user.
      */
-    public function getAccountById(int $accountId): ?Account
+    public function getAccountById(string $accountId): ?Account
     {
         return Account::with(['currency', 'transactions'])
             ->where('user_id', Auth::id())

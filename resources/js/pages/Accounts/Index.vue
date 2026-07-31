@@ -345,7 +345,7 @@ interface Currency {
 }
 
 interface Account {
-  id: number
+  id: string
   name: string
   balance: number
   initial_balance: number
@@ -528,7 +528,7 @@ const handleModalSuccess = () => {
   router.reload()
 }
 
-const openPrintReport = (accountId: number) => {
+const openPrintReport = (accountId: string) => {
   router.visit(`/accounts/${accountId}/report`)
 }
 </script>

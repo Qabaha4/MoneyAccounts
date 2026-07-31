@@ -228,6 +228,13 @@
         </div>
       </form>
     </DialogContent>
+    <ConfirmDialog
+      :open="showDeleteConfirm"
+      :message="t('common.confirm_delete', { name: props.transaction?.description || 'this transaction' })"
+      @update:open="showDeleteConfirm = $event"
+      @confirm="handleDeleteConfirmed"
+      @cancel="showDeleteConfirm = false"
+    />
   </Dialog>
 </template>
 
@@ -250,6 +257,7 @@ import { Trash2, Save, Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft } from 
 import transactionRoutes from '@/routes/transactions'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import DateTimePicker from '@/components/ui/date-time-picker/DateTimePicker.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const { t } = useI18n()
 
@@ -261,13 +269,13 @@ interface Currency {
 }
 
 interface Account {
-  id: number
+  id: string
   name: string
   currency: Currency
 }
 
 interface Transaction {
-  id: number
+  id: string
   type: string
   amount: string
   description: string | null
@@ -283,7 +291,7 @@ interface Props {
   isOpen: boolean
   accounts: Account[]
   transaction?: Transaction | null
-  defaultAccountId?: number
+  defaultAccountId?: string
   allowAccountChange?: boolean
 }
 
@@ -298,6 +306,7 @@ const emit = defineEmits<{
 
 const isEditing = computed(() => !!props.transaction)
 const isDeleting = ref(false)
+const showDeleteConfirm = ref(false)
 
 // Helper function to format datetime for datetime-local input
 const formatDateTimeLocal = (date: Date | string): string => {
@@ -469,28 +478,26 @@ const submit = () => {
 }
 
 const handleDelete = () => {
+  showDeleteConfirm.value = true
+}
+
+const handleDeleteConfirmed = () => {
   if (!props.transaction) return
-  
-  const confirmMessage = t('common.confirm_delete', { 
-    name: props.transaction.description || 'this transaction' 
+  showDeleteConfirm.value = false
+  isDeleting.value = true
+
+  router.delete(transactionRoutes.destroy({ transaction: props.transaction.id }).url, {
+    onSuccess: () => {
+      emit('success')
+      emit('update:isOpen', false)
+      form.reset()
+    },
+    onError: () => {
+      isDeleting.value = false
+    },
+    onFinish: () => {
+      isDeleting.value = false
+    }
   })
-  
-  if (confirm(confirmMessage)) {
-    isDeleting.value = true
-    
-    router.delete(transactionRoutes.destroy({ transaction: props.transaction.id }).url, {
-      onSuccess: () => {
-        emit('success')
-        emit('update:isOpen', false)
-        form.reset()
-      },
-      onError: () => {
-        isDeleting.value = false
-      },
-      onFinish: () => {
-        isDeleting.value = false
-      }
-    })
-  }
 }
 </script>

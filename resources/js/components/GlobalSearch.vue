@@ -22,7 +22,7 @@ import {
 import { useFormatting } from '@/composables/useFormatting';
 
 interface SearchResult {
-    id: number;
+    id: string;
     type: 'account' | 'transaction';
     title: string;
     description?: string;

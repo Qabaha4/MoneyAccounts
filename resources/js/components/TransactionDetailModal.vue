@@ -219,14 +219,14 @@ interface Currency {
 }
 
 interface Account {
-  id: number
+  id: string
   name: string
   type: string
   currency: Currency
 }
 
 interface Transaction {
-  id: number
+  id: string
   type: 'income' | 'expense' | 'transfer'
   amount: string
   description: string | null
@@ -272,7 +272,7 @@ defineEmits<{
   'update:isOpen': [value: boolean]
   'edit': [transaction: Transaction]
   'delete': [transaction: Transaction]
-  'navigateToAccount': [accountId: number]
+  'navigateToAccount': [accountId: string]
 }>()
 </script>
 

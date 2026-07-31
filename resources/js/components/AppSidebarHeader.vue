@@ -24,7 +24,7 @@ const { t } = useI18n();
 
 // TypeScript interfaces for search results
 interface Account {
-    id: number;
+    id: string;
     description?: string;
     name: string;
     is_active?: boolean;
@@ -33,8 +33,8 @@ interface Account {
 }
 
 interface SearchTransaction {
-    id: number;
-    account_id: number;
+    id: string;
+    account_id: string;
     description: string;
     amount: number;
     currency: string;
@@ -112,7 +112,7 @@ const handleSearch = async (query: string) => {
     }, debounceTime);
 };
 
-const selectItem = (type: 'account' | 'transaction', id: number) => {
+const selectItem = (type: 'account' | 'transaction', id: string) => {
     if (type === 'account') {
         router.visit(`/accounts/${id}`);
     } else {
@@ -152,7 +152,7 @@ const selectItem = (type: 'account' | 'transaction', id: number) => {
 };
 
 // Handle navigation to account from transaction modal
-const handleNavigateToAccount = (accountId: number) => {
+const handleNavigateToAccount = (accountId: string) => {
     isTransactionModalOpen.value = false;
     router.visit(`/accounts/${accountId}`);
 };
