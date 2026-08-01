@@ -351,7 +351,8 @@ import TransactionDetailModal from '@/components/TransactionDetailModal.vue'
 import {
   ActivityIcon, Search, Filter, X, Eye,
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
-  CirclePlus, Pencil, Trash2, Download, Printer, ExternalLink, ArrowRight
+  CirclePlus, Pencil, Trash2, Download, Printer, ExternalLink, ArrowRight,
+  Lock, LockOpen, ShieldOff, ShieldCheck, AlertCircle, EyeOff
 } from 'lucide-vue-next'
 import { type BreadcrumbItem } from '@/types'
 import { dashboard } from '@/routes'
@@ -405,6 +406,7 @@ const subjectTypes = [
   { value: 'App\\Models\\Account', label: t('activity.account') },
   { value: 'App\\Models\\Transaction', label: t('activity.transaction') },
   { value: 'report', label: t('activity.report') },
+  { value: 'passcode', label: t('activity.passcode') },
 ]
 
 const filtersExpanded = ref(false)
@@ -472,6 +474,7 @@ const getSubjectTypeLabel = (type: string) => {
     'App\\Models\\Account': t('activity.account'),
     'App\\Models\\Transaction': t('activity.transaction'),
     'report': t('activity.report'),
+    'passcode': t('activity.passcode'),
   }
   return map[type] || type.split('\\').pop() || type
 }
@@ -483,6 +486,13 @@ const getActionLabel = (action: string) => {
     'deleted': t('activity.deleted'),
     'exported': t('activity.exported'),
     'printed': t('activity.printed'),
+    'passcode_set': t('activity.passcode_set'),
+    'passcode_changed': t('activity.passcode_changed'),
+    'passcode_disabled': t('activity.passcode_disabled'),
+    'passcode_verified': t('activity.passcode_verified'),
+    'passcode_failed': t('activity.passcode_failed'),
+    'dashboard_balance_hidden': t('activity.dashboard_balance_hidden'),
+    'dashboard_balance_shown': t('activity.dashboard_balance_shown'),
   }
   return map[action] || action
 }
@@ -499,6 +509,20 @@ const getActionIcon = (action: string) => {
       return { icon: Download, bgClass: 'bg-purple-500/10', colorClass: 'text-purple-600 dark:text-purple-400' }
     case 'printed':
       return { icon: Printer, bgClass: 'bg-orange-500/10', colorClass: 'text-orange-600 dark:text-orange-400' }
+    case 'passcode_set':
+      return { icon: Lock, bgClass: 'bg-amber-500/10', colorClass: 'text-amber-600 dark:text-amber-400' }
+    case 'passcode_changed':
+      return { icon: LockOpen, bgClass: 'bg-blue-500/10', colorClass: 'text-blue-600 dark:text-blue-400' }
+    case 'passcode_disabled':
+      return { icon: ShieldOff, bgClass: 'bg-rose-500/10', colorClass: 'text-rose-600 dark:text-rose-400' }
+    case 'passcode_verified':
+      return { icon: ShieldCheck, bgClass: 'bg-emerald-500/10', colorClass: 'text-emerald-600 dark:text-emerald-400' }
+    case 'passcode_failed':
+      return { icon: AlertCircle, bgClass: 'bg-rose-500/10', colorClass: 'text-rose-600 dark:text-rose-400' }
+    case 'dashboard_balance_hidden':
+      return { icon: EyeOff, bgClass: 'bg-purple-500/10', colorClass: 'text-purple-600 dark:text-purple-400' }
+    case 'dashboard_balance_shown':
+      return { icon: Eye, bgClass: 'bg-purple-500/10', colorClass: 'text-purple-600 dark:text-purple-400' }
     default:
       return { icon: ActivityIcon, bgClass: 'bg-secondary/50', colorClass: 'text-muted-foreground' }
   }

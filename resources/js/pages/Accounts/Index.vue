@@ -222,11 +222,34 @@
                   <div class="text-xs font-medium text-muted-foreground mb-1">
                     {{ t('accounts.balance') }}
                   </div>
-                  <div 
-                    class="text-lg font-bold"
-                    :class="account.balance >= 0 ? 'text-success' : 'text-destructive'"
-                  >
-                    {{ formatCurrency(account.balance, account.currency) }}
+                  <div class="flex items-center gap-1">
+                    <template v-if="localBalanceHidden[account.id]">
+                      <span class="text-sm font-bold text-muted-foreground">••••</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-6 w-6 p-0"
+                        @click.stop="toggleBalanceEye(account)"
+                      >
+                        <EyeOff class="w-3 h-3" />
+                      </Button>
+                    </template>
+                    <template v-else>
+                      <div 
+                        class="text-lg font-bold"
+                        :class="(account.balance ?? 0) >= 0 ? 'text-success' : 'text-destructive'"
+                      >
+                        {{ formatCurrency(account.balance ?? 0, account.currency) }}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-6 w-6 p-0"
+                        @click.stop="toggleBalanceEye(account)"
+                      >
+                        <Eye class="w-3 h-3" />
+                      </Button>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -298,13 +321,14 @@
        v-model:open="isModalOpen"
        :account="editingAccount"
        :currencies="props.currencies"
+       :has-passcode="props.hasPasscode"
        @success="handleModalSuccess"
      />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
@@ -313,7 +337,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus as PlusIcon, Eye, Edit, Wallet, Search, Printer, Landmark, PiggyBank, CreditCard, TrendingUp, Banknote, MoreHorizontal, Filter, X, ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { Plus as PlusIcon, Eye, Edit, Wallet, Search, Printer, Landmark, PiggyBank, CreditCard, TrendingUp, Banknote, MoreHorizontal, Filter, X, ChevronDown, ChevronUp, EyeOff } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useFormatting } from '@/composables/useFormatting'
 import { useAccountType } from '@/composables/useAccountType'
@@ -347,7 +371,7 @@ interface Currency {
 interface Account {
   id: string
   name: string
-  balance: number
+  balance: number | null
   initial_balance: number
   is_active: boolean
   type: string
@@ -356,6 +380,8 @@ interface Account {
   description?: string | null
   created_at: string
   updated_at: string
+  balance_hidden?: boolean
+  is_locked?: boolean
 }
 
 interface Filters {
@@ -372,6 +398,7 @@ const props = defineProps<{
   accounts: Account[]
   currencies: Currency[]
   filters?: Filters
+  hasPasscode: boolean
 }>()
 
 // Modal state
@@ -382,6 +409,20 @@ const editingAccount = ref<Account | null>(null)
 const filtersExpanded = ref(false)
 const searchTimeout = ref<number | null>(null)
 const resetKey = ref(0)
+
+const localBalanceHidden = reactive<Record<string, boolean>>({})
+
+watch(() => props.accounts, (accounts) => {
+  accounts.forEach((a) => {
+    if (!(a.id in localBalanceHidden)) {
+      localBalanceHidden[a.id] = a.hide_balance ?? false
+    }
+  })
+}, { immediate: true })
+
+const toggleBalanceEye = (account: Account) => {
+  localBalanceHidden[account.id] = !localBalanceHidden[account.id]
+}
 
 const filterForm = reactive({
   search: props.filters?.search || '',

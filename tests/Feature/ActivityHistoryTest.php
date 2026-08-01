@@ -2,20 +2,21 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use App\Models\User;
 use App\Models\Account;
+use App\Models\Activity;
 use App\Models\Currency;
 use App\Models\Transaction;
-use App\Models\Activity;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
 
 class ActivityHistoryTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
     protected User $user;
+
     protected Currency $currency;
 
     protected function setUp(): void
@@ -132,7 +133,7 @@ class ActivityHistoryTest extends TestCase
         $filtered = Activity::where('subject_type', Account::class)->get();
         $this->assertEquals(1, $filtered->count());
 
-        $response = $this->get('/activity?subject_type=' . urlencode(Account::class));
+        $response = $this->get('/activity?subject_type='.urlencode(Account::class));
         $response->assertInertia(function ($page) {
             $page->has('activities.data', 1);
         });
@@ -152,6 +153,25 @@ class ActivityHistoryTest extends TestCase
 
         $response->assertInertia(function ($page) {
             $page->has('activities.data', 0);
+        });
+    }
+
+    public function test_history_page_renders_with_non_class_subject_types(): void
+    {
+        Account::factory()->create([
+            'user_id' => $this->user->id,
+            'currency_id' => $this->currency->id,
+            'name' => 'My Account',
+        ]);
+
+        Activity::log('passcode_set', null, $this->user, 'Set app passcode', null, 'passcode');
+
+        $response = $this->get('/activity');
+
+        $response->assertStatus(200);
+        $response->assertInertia(function ($page) {
+            $page->component('Activity/Index')
+                ->has('activities.data', 2);
         });
     }
 }

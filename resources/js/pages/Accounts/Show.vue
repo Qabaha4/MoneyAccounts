@@ -24,10 +24,31 @@
 
     <div class="py-4 sm:py-6">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <!-- Lock Screen -->
+        <Card v-if="props.locked" class="text-center py-12">
+          <CardContent class="flex flex-col items-center gap-4">
+            <div class="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center">
+              <Lock class="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 class="text-lg font-semibold text-foreground">
+              {{ t('passcode.account_locked') }}
+            </h3>
+            <p class="text-sm text-muted-foreground max-w-sm">
+              {{ t('passcode.account_locked_description') }}
+            </p>
+            <Button @click="isPasscodeModalOpen = true">
+              <Lock class="w-4 h-4 me-2" />
+              {{ t('passcode.unlock') }}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <template v-if="!props.locked">
         <!-- Hero Section -->
-        <HeroSection 
-          :main-sec-val="`${formatAmount(totalBalance)} ${account.currency.symbol}`"
-          :main-sec-label="t('dashboard.total_balance')"
+        <div class="relative">
+          <HeroSection 
+            :main-sec-val="displayBalance"
+            :main-sec-label="t('dashboard.total_balance')"
           :sub-sec-p1-val="account.name"
           :sub-sec-p1-label="t('dashboard.account_name')"
           :sub-sec-p2-val="`${monthlyTransactionsCount}`"
@@ -38,7 +59,18 @@
           :status-val="account.is_active ? t('accounts.active') : t('accounts.inactive')"
           :show-edit-button="true"
           @edit="openAccountEditModal"
-        />
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            type="button"
+            class="absolute bottom-2 right-2 z-20 text-white/70 hover:text-white hover:bg-white/10"
+            @click="toggleBalanceEye"
+          >
+            <EyeOff v-if="localBalanceHidden" class="w-4 h-4" />
+            <Eye v-else class="w-4 h-4" />
+          </Button>
+        </div>
 
         <!-- Account Description (if exists) -->
         <Card v-if="account.description">
@@ -198,9 +230,15 @@
           </CardContent>
         </Card>
 
+        </template>
 
       </div>
     </div>
+
+    <!-- Passcode Modal -->
+    <PasscodeModal
+      v-model:open="isPasscodeModalOpen"
+    />
 
     <!-- Transaction Modal -->
     <TransactionModal
@@ -228,6 +266,7 @@
       v-model:open="isAccountModalOpen"
       :account="props.account"
       :currencies="props.currencies"
+      :has-passcode="props.hasPasscode"
       @success="handleAccountSuccess"
     />
   </AppLayout>
@@ -244,13 +283,14 @@ import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 
 import { Input } from '@/components/ui/input'
-import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, Search, Printer, Loader2 } from 'lucide-vue-next'
+import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, Search, Printer, Loader2, Lock, EyeOff } from 'lucide-vue-next'
 import accounts from '@/routes/accounts'
 import transactions from '@/routes/transactions'
 import TransactionModal from '@/components/TransactionModal.vue'
 import TransactionDetailModal from '@/components/TransactionDetailModal.vue'
 import AccountFormModal from '@/components/AccountFormModal.vue'
 import HeroSection from '@/components/HeroSection.vue'
+import PasscodeModal from '@/components/PasscodeModal.vue'
 import { type BreadcrumbItem } from '@/types'
 import { useFormatting } from '@/composables/useFormatting'
 import { useAccountType } from '@/composables/useAccountType'
@@ -282,7 +322,7 @@ interface Account {
   id: string
   name: string
   type: string
-  balance: number
+  balance: number | null
   initial_balance: number
   is_active: boolean
   currency: Currency
@@ -291,6 +331,9 @@ interface Account {
   description: string | null
   created_at: string
   updated_at: string
+  balance_hidden?: boolean
+  is_locked?: boolean
+  hide_balance?: boolean
 }
 
 const props = defineProps<{
@@ -303,6 +346,8 @@ const props = defineProps<{
     total: number
     last_page: number
   }
+  locked?: boolean
+  hasPasscode: boolean
 }>()
 
 const { t } = useI18n()
@@ -326,6 +371,7 @@ const editingTransaction = ref<Transaction | null>(null)
 const viewingTransaction = ref<Transaction | null>(null)
 const returningFromView = ref(false)
 const isAccountModalOpen = ref(false)
+const isPasscodeModalOpen = ref(false)
 const searchQuery = ref('')
 const allTransactions = ref<Transaction[]>([])
 const loadingMore = ref(false)
@@ -348,7 +394,16 @@ watch(() => props.account?.transactions, (transactions) => {
 }, { immediate: true })
 
 // Computed properties for HeroSection component
-const totalBalance = computed(() => props.account.balance)
+const totalBalance = computed(() => props.account.balance ?? 0)
+
+const localBalanceHidden = ref(props.account.hide_balance ?? false)
+
+const displayBalance = computed(() => {
+  if (localBalanceHidden.value) {
+    return `•••• ${props.account.currency.symbol}`
+  }
+  return `${formatAmount(props.account.balance ?? 0)} ${props.account.currency.symbol}`
+})
 const accountsForHero = computed(() => [props.account])
 const recentTransactionsForHero = computed(() => allTransactions.value.slice(0, 3))
 
@@ -528,6 +583,10 @@ const handleTransactionSuccess = () => {
 
 const openAccountEditModal = () => {
   isAccountModalOpen.value = true
+}
+
+const toggleBalanceEye = () => {
+  localBalanceHidden.value = !localBalanceHidden.value
 }
 
 const handleAccountSuccess = () => {

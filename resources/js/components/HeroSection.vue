@@ -64,12 +64,13 @@ const isNegativeBalance = computed(() => {
         </div>
 
         <!-- Edit Button -->
-        <div v-if="props.showEditButton" class="absolute top-4 left-4 z-10">
+        <div v-if="props.showEditButton" class="absolute top-4 left-4 z-20">
             <Button
                 variant="ghost"
                 size="sm"
+                type="button"
                 @click="emit('edit')"
-                class="h-8 w-8 p-0 text-white/70 hover:text-white hover:bg-white/10"
+                class="h-9 w-9 p-0 text-white/70 hover:text-white hover:bg-white/10"
                 :title="t('accounts.edit')"
             >
                 <Edit class="w-4 h-4" />

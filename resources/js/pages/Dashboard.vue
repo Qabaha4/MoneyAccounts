@@ -4,17 +4,18 @@ import { dashboard } from '@/routes';
 import accounts from '@/routes/accounts';
 import transactions from '@/routes/transactions';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, TrendingUp, TrendingDown, ArrowUpDown, Eye, ArrowRight, Wallet, Receipt, ChevronDown, Landmark, BarChart3, List, ArrowRightLeft } from 'lucide-vue-next';
+import { Plus, TrendingUp, TrendingDown, ArrowUpDown, Eye, ArrowRight, Wallet, Receipt, ChevronDown, Landmark, BarChart3, List, ArrowRightLeft, EyeOff } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import TransactionDetailModal from '@/components/TransactionDetailModal.vue';
 import HeroSection from '@/components/HeroSection.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import PasscodeModal from '@/components/PasscodeModal.vue';
 
 import { useFormatting } from '@/composables/useFormatting';
 import { useAccountType } from '@/composables/useAccountType';
@@ -33,11 +34,12 @@ interface Account {
     name: string;
     description: string | null;
     type: string;
-    balance: number;
+    balance: number | null;
     initial_balance: number;
     is_active: boolean;
     currency: Currency;
     transactions: Transaction[];
+    balance_hidden?: boolean;
 }
 
 interface Transaction {
@@ -53,10 +55,11 @@ interface Transaction {
 
 interface Props {
     accounts: Account[];
-    totalBalance: number;
+    totalBalance: number | null;
     recentTransactions: Transaction[];
     userCurrencies: Currency[];
     balancesByCurrency: Record<number, number>;
+    hasPasscode: boolean;
 }
 
 const props = defineProps<Props>();
@@ -72,6 +75,9 @@ const isTransactionsOpen = ref(true);
 // Transaction detail modal state
 const isTransactionDetailModalOpen = ref(false);
 const selectedTransaction = ref<Transaction | null>(null);
+
+// Passcode modal state
+const isPasscodeModalOpen = ref(false);
 
 
 
@@ -119,11 +125,16 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-// Computed property for total balance in selected currency (sum of accounts in that currency only)
-const convertedTotalBalance = computed(() => {
-    if (!selectedCurrency.value) return props.totalBalance;
-    
-    return props.balancesByCurrency[selectedCurrency.value.id] || 0;
+// Computed property for total balance display
+const displayBalance = computed(() => {
+    if (props.totalBalance === null) {
+        return '••••';
+    }
+    if (selectedCurrency.value) {
+        const currencyBalance = props.balancesByCurrency[selectedCurrency.value.id] || 0;
+        return `${formatAmount(currencyBalance)} ${selectedCurrencySymbol.value}`;
+    }
+    return `${formatAmount(props.totalBalance)}`;
 });
 
 // Computed property for selected currency symbol
@@ -192,6 +203,16 @@ const getTransactionCurrency = (transaction: Transaction) => {
 const handleCurrencyChange = (currency: Currency) => {
     selectedCurrency.value = currency;
 };
+
+const toggleDashboardEye = () => {
+  if (props.totalBalance === null && props.hasPasscode) {
+    isPasscodeModalOpen.value = true;
+  } else {
+    router.post('/settings/passcode/dashboard-balance', {}, {
+      preserveScroll: true,
+    });
+  }
+};
 </script>
 
 <template>
@@ -230,7 +251,7 @@ const handleCurrencyChange = (currency: Currency) => {
                 <div class="space-y-4">
                     <!-- Dashboard Balance Hero -->
                     <HeroSection 
-                        :main-sec-val="`${formatAmount(convertedTotalBalance)} ${selectedCurrencySymbol}`"
+                        :main-sec-val="displayBalance"
                     :main-sec-label="t('dashboard.total_balance')"
                     :sub-sec-p1-val="props.accounts.length.toString()"
                     :sub-sec-p1-label="t('dashboard.total_wallets')"
@@ -243,6 +264,17 @@ const handleCurrencyChange = (currency: Currency) => {
                         :selected-currency="selectedCurrency || undefined"
                         @currency-change="handleCurrencyChange"
                     />
+                    <div class="flex justify-center mt-3">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        @click="toggleDashboardEye"
+                        class="text-white/70 hover:text-white hover:bg-white/10"
+                      >
+                        <EyeOff v-if="props.totalBalance === null" class="w-4 h-4 me-1" />
+                        <Eye v-else class="w-4 h-4 me-1" />
+                      </Button>
+                    </div>
 
                     <!-- Quick Actions -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -334,9 +366,10 @@ const handleCurrencyChange = (currency: Currency) => {
                                         <div class="text-right flex-shrink-0">
                                             <div 
                                                 class="text-sm font-bold"
-                                                :class="account.balance >= 0 ? 'text-success' : 'text-destructive'"
+                                                :class="(account.balance ?? 0) >= 0 ? 'text-success' : 'text-destructive'"
                                             >
-                                                {{ formatCurrency(account.balance, account.currency) }}
+                                                <span v-if="account.balance_hidden">••••</span>
+                                                <span v-else>{{ formatCurrency(account.balance ?? 0, account.currency) }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -498,6 +531,11 @@ const handleCurrencyChange = (currency: Currency) => {
             :transaction="selectedTransaction"
             :hide-actions="true"
             @navigate-to-account="handleNavigateToAccount"
+        />
+
+        <!-- Passcode Modal -->
+        <PasscodeModal
+            v-model:open="isPasscodeModalOpen"
         />
     </AppLayout>
 </template>

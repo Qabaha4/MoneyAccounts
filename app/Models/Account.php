@@ -37,12 +37,16 @@ class Account extends Model
         'balance',
         'initial_balance',
         'is_active',
+        'is_locked',
+        'hide_balance',
     ];
 
     protected $casts = [
         'balance' => 'decimal:4',
         'initial_balance' => 'decimal:4',
         'is_active' => 'boolean',
+        'is_locked' => 'boolean',
+        'hide_balance' => 'boolean',
     ];
 
     /**

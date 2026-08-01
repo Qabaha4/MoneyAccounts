@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Currency;
 use App\Http\Requests\AccountRequest;
+use App\Services\PasscodeService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,12 @@ use Illuminate\Support\Facades\Log;
 
 class AccountController extends Controller
 {
+    protected PasscodeService $passcodeService;
+
+    public function __construct(PasscodeService $passcodeService)
+    {
+        $this->passcodeService = $passcodeService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -163,6 +170,18 @@ class AccountController extends Controller
             abort(403);
         }
 
+        // Check if account is locked and passcode not verified
+        if ($account->is_locked && $this->passcodeService->hasPasscode() && !$this->passcodeService->verified()) {
+            $account->load('currency');
+
+            return Inertia::render('Accounts/Show', [
+                'account' => $account,
+                'accounts' => Account::with('currency')->where('user_id', Auth::id())->orderBy('name')->get(),
+                'currencies' => Currency::orderBy('code')->get(),
+                'locked' => true,
+            ]);
+        }
+
         // Load account with currency
         $account->load('currency');
 
@@ -245,6 +264,11 @@ class AccountController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        // Verify passcode if user has one configured
+        if ($this->passcodeService->hasPasscode() && !$this->passcodeService->verify($request->passcode ?? '')) {
+            return back()->withErrors(['passcode' => 'Invalid passcode.']);
+        }
+
         $validatedData = $request->getValidatedDataForUpdate();
 
 
@@ -253,6 +277,22 @@ class AccountController extends Controller
 
         return redirect()->back()
             ->with('success', 'Account updated successfully.');
+    }
+
+    /**
+     * Toggle hide_balance on an account (no passcode required).
+     */
+    public function toggleHideBalance(Account $account)
+    {
+        if ($account->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $account->update([
+            'hide_balance' => !$account->hide_balance,
+        ]);
+
+        return back();
     }
 
     /**

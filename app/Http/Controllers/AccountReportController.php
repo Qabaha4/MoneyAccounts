@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Activity;
 use App\Models\Transaction;
+use App\Services\PasscodeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -12,11 +13,10 @@ use Carbon\Carbon;
 
 class AccountReportController extends Controller
 {
-    /**
-     * Generate a printable report for an account
-     */
     public function show(Request $request, Account $account)
     {
+        $passcodeService = app(PasscodeService::class);
+
         // Verify ownership
         if ($account->user_id !== Auth::id()) {
             abort(403);
@@ -24,6 +24,27 @@ class AccountReportController extends Controller
 
         // Load account with currency
         $account->load('currency');
+
+        // Check if account is locked
+        if ($account->is_locked && $passcodeService->hasPasscode() && !$passcodeService->verified()) {
+            return Inertia::render('Accounts/Report', [
+                'account' => $account,
+                'transactions' => collect(),
+                'statistics' => [],
+                'transactionsByType' => [],
+                'startDate' => now()->subMonths(1)->toDateString(),
+                'endDate' => now()->toDateString(),
+                'generatedAt' => Carbon::now()->toDateTimeString(),
+                'user' => Auth::user(),
+                'locked' => true,
+            ]);
+        }
+
+        // Apply balance masking
+        if ($passcodeService->hideAccountBalance($account)) {
+            $account->balance = null;
+            $account->balance_hidden = true;
+        }
 
         // Get date range from request or use defaults
         $startDate = $request->input('start_date')

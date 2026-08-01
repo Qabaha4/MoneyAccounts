@@ -46,6 +46,8 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         'email',
         'password',
         'role',
+        'passcode_hash',
+        'hide_dashboard_balance',
     ];
 
     /**
@@ -56,6 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     protected $hidden = [
         'password',
         'remember_token',
+        'passcode_hash',
     ];
 
     /**
@@ -68,6 +71,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'hide_dashboard_balance' => 'boolean',
         ];
     }
 

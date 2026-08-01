@@ -5,7 +5,9 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ActivityHistoryController;
+use App\Http\Controllers\PasscodeController;
 use App\Http\Controllers\TransactionController;
+use App\Services\PasscodeService;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -29,6 +31,7 @@ Route::post('/locale', function () {
 
 Route::get('dashboard', function () {
     $user = Auth::user();
+    $passcodeService = app(PasscodeService::class);
 
     // Fetch all accounts with needed data, including max transaction date for sorting
     $allAccounts = \App\Models\Account::with(['currency', 'transactions' => function ($query) {
@@ -58,6 +61,14 @@ Route::get('dashboard', function () {
 
     // Sort accounts by last transaction date and take top 5 for display
     $recentAccounts = $allAccounts->sortByDesc('transactions_max_transaction_date')->values()->take(5);
+
+    // Apply passcode masking
+    $recentAccounts = $passcodeService->maskAccounts($recentAccounts);
+
+    if ($passcodeService->hideDashboardTotal()) {
+        $totalBalance = null;
+        $balancesByCurrency = [];
+    }
 
     // Get user's account IDs for filtering
     $userAccountIds = $allAccounts->pluck('id');
@@ -111,6 +122,7 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
     })->name('report.index');
 
     Route::resource('accounts', AccountController::class)->except(['create', 'edit']);
+    Route::post('accounts/{account}/toggle-hide-balance', [AccountController::class, 'toggleHideBalance'])->name('accounts.toggle-hide-balance');
     Route::get('accounts/{account}/report', [App\Http\Controllers\AccountReportController::class, 'show'])->name('accounts.report');
     Route::resource('transactions', TransactionController::class)->except(['create', 'edit', 'show']);
 
@@ -119,6 +131,11 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
 
     // Activity history
     Route::get('/activity', [App\Http\Controllers\ActivityHistoryController::class, 'index'])->name('activity.index');
+
+    // Passcode verification
+    Route::post('/passcode/verify', [PasscodeController::class, 'verify'])
+        ->middleware('throttle:5,1')
+        ->name('passcode.verify');
 });
 
 // Admin backup download route (within Filament's middleware context)
