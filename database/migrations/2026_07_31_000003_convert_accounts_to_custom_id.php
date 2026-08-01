@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!PkSwapHelper::isIntegerColumn('accounts', 'id')) {
+        if (! PkSwapHelper::isIntegerColumn('accounts', 'id')) {
             return;
         }
 
@@ -37,8 +37,15 @@ return new class extends Migration
         }
 
         foreach (['account_id', 'transfer_to_account_id'] as $col) {
-            $legacyCol = $col . '_legacy';
-            if (!Schema::hasColumn('transactions', $legacyCol)) {
+            $legacyCol = $col.'_legacy';
+
+            if (Schema::hasColumn('transactions', $legacyCol) && ! Schema::hasColumn('transactions', $col)) {
+                Schema::table('transactions', function (Blueprint $table) use ($col, $legacyCol) {
+                    $table->renameColumn($legacyCol, $col);
+                });
+            }
+
+            if (! Schema::hasColumn('transactions', $legacyCol)) {
                 Schema::table('transactions', function (Blueprint $table) use ($col, $legacyCol) {
                     $table->renameColumn($col, $legacyCol);
                 });
@@ -52,7 +59,18 @@ return new class extends Migration
                     ->update([
                         "transactions.{$col}" => DB::raw('accounts.custom_id'),
                     ]);
+            }
 
+            $indexes = Schema::getIndexes('transactions');
+            foreach ($indexes as $index) {
+                if (in_array($legacyCol, $index['columns'] ?? [], true)) {
+                    Schema::table('transactions', function (Blueprint $table) use ($index) {
+                        $table->dropIndex($index['name']);
+                    });
+                }
+            }
+
+            if (Schema::hasColumn('transactions', $legacyCol)) {
                 Schema::table('transactions', function (Blueprint $table) use ($col, $legacyCol) {
                     $table->string($col, 20)->nullable($col === 'account_id' ? false : true)->change();
                     $table->dropColumn($legacyCol);
@@ -80,7 +98,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        throw new \RuntimeException('This migration is irreversible; restore from backup.');
+        throw new RuntimeException('This migration is irreversible; restore from backup.');
     }
 
     private function backfillAccounts(): void
@@ -97,11 +115,11 @@ return new class extends Migration
             $rank = 0;
             $yy = substr($period, 2, 2);
             $mm = substr($period, 5, 2);
-            $periodKey = $yy . $mm;
+            $periodKey = $yy.$mm;
 
             foreach ($group as $account) {
                 $rank++;
-                $customId = 'acc-' . $periodKey . str_pad($rank, 3, '0', STR_PAD_LEFT);
+                $customId = 'acc-'.$periodKey.str_pad($rank, 3, '0', STR_PAD_LEFT);
 
                 DB::table('accounts')->where('id', $account->id)
                     ->update(['custom_id' => $customId]);
@@ -147,7 +165,7 @@ return new class extends Migration
         });
 
         DB::statement(
-            'INSERT INTO accounts_new (id, user_id, currency_id, name, description, type, balance, initial_balance, is_active, created_at, updated_at) ' .
+            'INSERT INTO accounts_new (id, user_id, currency_id, name, description, type, balance, initial_balance, is_active, created_at, updated_at) '.
             'SELECT custom_id, user_id, currency_id, name, description, type, balance, initial_balance, is_active, created_at, updated_at FROM accounts'
         );
 

@@ -11,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!PkSwapHelper::isIntegerColumn('users', 'id')) {
+        if (! PkSwapHelper::isIntegerColumn('users', 'id')) {
             return;
         }
 
@@ -38,52 +38,75 @@ return new class extends Migration
             }
         }
 
-        Schema::table('users', function (Blueprint $table) {
-            $table->uuid('uuid')->nullable()->after('id');
-        });
-
-        DB::table('users')->whereNull('uuid')
-            ->orderBy('created_at')->orderBy('id')
-            ->chunkById(500, function ($rows) {
-                foreach ($rows as $row) {
-                    DB::table('users')->where('id', $row->id)
-                        ->update(['uuid' => (string) Str::uuid()]);
-                }
+        if (! Schema::hasColumn('users', 'uuid')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->uuid('uuid')->nullable()->after('id');
             });
 
-        Schema::table('users', function (Blueprint $table) {
-            $table->uuid('uuid')->nullable(false)->change();
-        });
+            DB::table('users')->whereNull('uuid')
+                ->orderBy('created_at')->orderBy('id')
+                ->chunkById(500, function ($rows) {
+                    foreach ($rows as $row) {
+                        DB::table('users')->where('id', $row->id)
+                            ->update(['uuid' => (string) Str::uuid()]);
+                    }
+                });
+
+            Schema::table('users', function (Blueprint $table) {
+                $table->uuid('uuid')->nullable(false)->change();
+            });
+        }
 
         foreach ($dependentTables as $dep) {
-            $legacyCol = $dep['column'] . '_legacy';
-            if (Schema::hasColumn($dep['table'], $legacyCol)) {
-                Schema::table($dep['table'], function (Blueprint $table) use ($legacyCol) {
-                    $table->dropColumn($legacyCol);
+            $legacyCol = $dep['column'].'_legacy';
+
+            if (Schema::hasColumn($dep['table'], $legacyCol) && ! Schema::hasColumn($dep['table'], $dep['column'])) {
+                Schema::table($dep['table'], function (Blueprint $table) use ($dep, $legacyCol) {
+                    $table->renameColumn($legacyCol, $dep['column']);
                 });
             }
 
-            Schema::table($dep['table'], function (Blueprint $table) use ($dep, $legacyCol) {
-                $table->renameColumn($dep['column'], $legacyCol);
-            });
+            if (! Schema::hasColumn($dep['table'], $legacyCol)) {
+                Schema::table($dep['table'], function (Blueprint $table) use ($dep, $legacyCol) {
+                    $table->renameColumn($dep['column'], $legacyCol);
+                });
 
-            Schema::table($dep['table'], function (Blueprint $table) use ($dep, $legacyCol) {
-                $table->string($dep['column'], 36)->nullable()->after($legacyCol);
-            });
+                Schema::table($dep['table'], function (Blueprint $table) use ($dep, $legacyCol) {
+                    $table->string($dep['column'], 36)->nullable()->after($legacyCol);
+                });
+            }
 
             DB::table($dep['table'])
                 ->join('users', "{$dep['table']}.{$legacyCol}", '=', 'users.id')
+                ->whereNull("{$dep['table']}.{$dep['column']}")
                 ->update([
                     "{$dep['table']}.{$dep['column']}" => DB::raw('users.uuid'),
                 ]);
 
-            Schema::table($dep['table'], function (Blueprint $table) use ($dep, $legacyCol) {
-                $table->string($dep['column'], 36)->nullable(false)->change();
-                $table->dropColumn($legacyCol);
+            $indexes = Schema::getIndexes($dep['table']);
+            foreach ($indexes as $index) {
+                if (in_array($legacyCol, $index['columns'] ?? [], true)) {
+                    Schema::table($dep['table'], function (Blueprint $table) use ($index) {
+                        $table->dropIndex($index['name']);
+                    });
+                }
+            }
+
+            if (Schema::hasColumn($dep['table'], $legacyCol)) {
+                Schema::table($dep['table'], function (Blueprint $table) use ($dep, $legacyCol) {
+                    $table->string($dep['column'], 36)->nullable(false)->change();
+                    $table->dropColumn($legacyCol);
+                });
+            }
+        }
+
+        if (Schema::hasTable('sessions') && Schema::hasColumn('sessions', 'user_id_legacy') && ! Schema::hasColumn('sessions', 'user_id')) {
+            Schema::table('sessions', function (Blueprint $table) {
+                $table->renameColumn('user_id_legacy', 'user_id');
             });
         }
 
-        if (Schema::hasTable('sessions') && Schema::hasColumn('sessions', 'user_id')) {
+        if (Schema::hasTable('sessions') && Schema::hasColumn('sessions', 'user_id') && ! Schema::hasColumn('sessions', 'user_id_legacy')) {
             Schema::table('sessions', function (Blueprint $table) {
                 $table->string('user_id_legacy', 36)->nullable()->after('user_id');
             });
@@ -93,6 +116,15 @@ return new class extends Migration
                 ->update([
                     'sessions.user_id_legacy' => DB::raw('users.uuid'),
                 ]);
+
+            $indexes = Schema::getIndexes('sessions');
+            foreach ($indexes as $index) {
+                if (in_array('user_id', $index['columns'] ?? [], true)) {
+                    Schema::table('sessions', function (Blueprint $table) use ($index) {
+                        $table->dropIndex($index['name']);
+                    });
+                }
+            }
 
             Schema::table('sessions', function (Blueprint $table) {
                 $table->dropColumn('user_id');
@@ -119,7 +151,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        throw new \RuntimeException('This migration is irreversible; restore from backup.');
+        throw new RuntimeException('This migration is irreversible; restore from backup.');
     }
 
     private function swapPkSqliteForUsers(): void
@@ -140,10 +172,10 @@ return new class extends Migration
         });
 
         DB::statement(
-            'INSERT INTO users_new (id, name, email, email_verified_at, password, remember_token, ' .
-            'two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at, role, deleted_at, created_at, updated_at) ' .
-            'SELECT uuid, name, email, email_verified_at, password, remember_token, ' .
-            'two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at, role, deleted_at, created_at, updated_at ' .
+            'INSERT INTO users_new (id, name, email, email_verified_at, password, remember_token, '.
+            'two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at, role, deleted_at, created_at, updated_at) '.
+            'SELECT uuid, name, email, email_verified_at, password, remember_token, '.
+            'two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at, role, deleted_at, created_at, updated_at '.
             'FROM users'
         );
 
