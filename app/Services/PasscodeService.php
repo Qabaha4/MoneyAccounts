@@ -71,21 +71,32 @@ class PasscodeService
         return $account->hide_balance;
     }
 
-    public function hideDashboardTotal(): bool
+    public function dashboardHidden(): bool
     {
         $user = Auth::user();
 
-        if ($this->isBalanceRevealed() || !$user) {
+        if (!$user) {
+            return false;
+        }
+
+        if ($this->isBalanceRevealed()) {
             return false;
         }
 
         return (bool) $user->hide_dashboard_balance;
     }
 
+    public function hideDashboardTotal(): bool
+    {
+        return $this->dashboardHidden();
+    }
+
     public function maskAccounts(Collection $accounts): Collection
     {
-        return $accounts->map(function (Account $account) {
-            if ($this->hideAccountBalance($account)) {
+        $dashboardHidden = $this->dashboardHidden();
+
+        return $accounts->map(function (Account $account) use ($dashboardHidden) {
+            if ($dashboardHidden || $this->hideAccountBalance($account)) {
                 $account->balance = null;
                 $account->balance_hidden = true;
             }

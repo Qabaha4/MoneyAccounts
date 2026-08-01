@@ -34,5 +34,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('settings/passcode', [PasscodeController::class, 'destroy'])
         ->name('passcode.destroy');
     Route::post('settings/passcode/dashboard-balance', [PasscodeController::class, 'toggleDashboardBalance'])
+        ->middleware('throttle:5,1')
         ->name('passcode.dashboard-balance');
 });

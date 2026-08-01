@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, TrendingUp, TrendingDown, ArrowUpDown, Eye, ArrowRight, Wallet, Receipt, ChevronDown, Landmark, BarChart3, List, ArrowRightLeft, EyeOff } from 'lucide-vue-next';
+import { Plus, TrendingUp, TrendingDown, ArrowUpDown, ArrowRight, Wallet, Receipt, ChevronDown, Landmark, BarChart3, List, ArrowRightLeft } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import TransactionDetailModal from '@/components/TransactionDetailModal.vue';
@@ -262,19 +262,11 @@ const toggleDashboardEye = () => {
                         :show-currency-selector="true"
                         :currencies="props.userCurrencies"
                         :selected-currency="selectedCurrency || undefined"
+                        :show-balance-toggle="true"
+                        :balance-hidden="props.totalBalance === null"
                         @currency-change="handleCurrencyChange"
+                        @toggle-balance="toggleDashboardEye"
                     />
-                    <div class="flex justify-center mt-3">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        @click="toggleDashboardEye"
-                        class="text-white/70 hover:text-white hover:bg-white/10"
-                      >
-                        <EyeOff v-if="props.totalBalance === null" class="w-4 h-4 me-1" />
-                        <Eye v-else class="w-4 h-4 me-1" />
-                      </Button>
-                    </div>
 
                     <!-- Quick Actions -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -530,6 +522,7 @@ const toggleDashboardEye = () => {
             v-model:is-open="isTransactionDetailModalOpen"
             :transaction="selectedTransaction"
             :hide-actions="true"
+            show-in-account
             @navigate-to-account="handleNavigateToAccount"
         />
 

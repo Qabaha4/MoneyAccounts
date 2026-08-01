@@ -30,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
-            if ($request->routeIs('passcode.verify')) {
+            if ($request->routeIs('passcode.verify') || $request->routeIs('passcode.dashboard-balance')) {
                 $retryAfter = (int) ($e->getHeaders()['Retry-After'] ?? 60);
 
                 return back()->withErrors([

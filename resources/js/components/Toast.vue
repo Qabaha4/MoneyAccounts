@@ -71,6 +71,7 @@ const dragStyle = computed(() => {
 
 function onPointerDown(e: PointerEvent, toastId: number) {
     if (prefersReducedMotion.value) return;
+    if (e.target instanceof Element && e.target.closest('button')) return;
     const el = toastEls.get(toastId);
     if (!el) return;
 
@@ -166,7 +167,7 @@ function onPointerUp(e: PointerEvent) {
         :name="prefersReducedMotion ? '' : 'toast'"
         move-class="toast-move"
         aria-live="polite"
-        class="fixed z-[100] inset-x-0 flex flex-col items-center sm:items-end gap-2 sm:gap-3 pointer-events-none"
+        class="fixed z-[100] inset-x-0 flex flex-col items-center sm:items-end sm:pe-4 gap-2 sm:gap-3 pointer-events-none"
         :class="prefersReducedMotion ? 'top-[calc(env(safe-area-inset-top,0.75rem)+1rem)]' : 'top-[calc(env(safe-area-inset-top,0.75rem)+1.5rem)]'"
     >
         <div
@@ -193,9 +194,10 @@ function onPointerUp(e: PointerEvent) {
                 }
             "
         >
-            <!-- Gradient brand background + 3D bevel shadow (matches HeroSection) -->
+            <!-- Gradient background per toast type + 3D bevel shadow -->
             <div
-                class="absolute inset-0 rounded-[20px] pointer-events-none gradient-brand"
+                class="absolute inset-0 rounded-[20px] pointer-events-none"
+                :class="toast.type === 'success' ? 'gradient-success' : 'gradient-danger'"
                 style="box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.12);"
             />
 

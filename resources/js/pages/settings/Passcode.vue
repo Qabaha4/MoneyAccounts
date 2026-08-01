@@ -2,9 +2,12 @@
 import InputError from '@/components/InputError.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { show as showPasscode, update, destroy } from '@/routes/passcode';
+import { ref, watch } from 'vue';
+import { show as showPasscode, update, destroy, dashboardBalance } from '@/routes/passcode';
+import PasscodeModal from '@/components/PasscodeModal.vue';
+import { Switch } from '@/components/ui/switch';
 
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Button } from '@/components/ui/button';
@@ -16,7 +19,20 @@ const { t } = useI18n();
 
 const props = defineProps<{
   hasPasscode: boolean;
+  hideDashboardBalance: boolean;
 }>();
+
+const isRevealModalOpen = ref(false);
+const isHidden = ref(props.hideDashboardBalance);
+const saving = ref(false);
+const recentlySaved = ref(false);
+
+watch(
+  () => props.hideDashboardBalance,
+  (value) => {
+    isHidden.value = value;
+  },
+);
 
 const breadcrumbItems: BreadcrumbItem[] = [
   {
@@ -51,6 +67,41 @@ const disable = () => {
       disableForm.reset();
     },
   });
+};
+
+const persistBalanceSetting = (hidden: boolean) => {
+  saving.value = true;
+  recentlySaved.value = false;
+
+  router.post(dashboardBalance().url, { hidden }, {
+    preserveScroll: true,
+    onSuccess: () => {
+      recentlySaved.value = true;
+      setTimeout(() => {
+        recentlySaved.value = false;
+      }, 2000);
+    },
+    onFinish: () => {
+      saving.value = false;
+    },
+  });
+};
+
+const saveBalanceSetting = () => {
+  if (isHidden.value) {
+    persistBalanceSetting(true);
+  } else if (props.hasPasscode) {
+    isRevealModalOpen.value = true;
+  } else {
+    persistBalanceSetting(false);
+  }
+};
+
+const handleRevealModalChange = (open: boolean) => {
+  isRevealModalOpen.value = open;
+  if (!open) {
+    isHidden.value = props.hideDashboardBalance;
+  }
 };
 </script>
 
@@ -151,7 +202,49 @@ const disable = () => {
             {{ t('passcode.disable') }}
           </Button>
         </form>
+
+        <!-- Hide/Show Dashboard Balance -->
+        <div class="space-y-6 pt-6 border-t">
+          <HeadingSmall
+            :title="t('passcode.dashboard_hide_heading')"
+            :description="t('passcode.dashboard_hide_description')"
+          />
+
+          <div class="flex items-center justify-between gap-4">
+            <Label for="hide-dashboard-balance">{{ t('passcode.hide_dashboard') }}</Label>
+            <Switch
+              id="hide-dashboard-balance"
+              :model-value="isHidden"
+              @update:model-value="isHidden = $event"
+            />
+          </div>
+
+          <div class="flex items-center gap-4">
+            <Button :disabled="saving" @click="saveBalanceSetting">
+              {{ saving ? t('common.saving') : t('common.save') }}
+            </Button>
+            <Transition
+              enter-active-class="transition ease-in-out"
+              enter-from-class="opacity-0"
+              leave-active-class="transition ease-in-out"
+              leave-to-class="opacity-0"
+            >
+              <p v-show="recentlySaved" class="text-sm text-neutral-600">
+                {{ t('common.saved') }}
+              </p>
+            </Transition>
+          </div>
+        </div>
       </div>
+
+      <PasscodeModal
+        v-model:open="isRevealModalOpen"
+        :title="t('passcode.verify_title')"
+        :description="t('passcode.dashboard_hide_verify_description')"
+        :action-url="dashboardBalance().url"
+        :extra-data="{ hidden: false }"
+        @update:open="handleRevealModalChange"
+      />
     </SettingsLayout>
   </AppLayout>
 </template>

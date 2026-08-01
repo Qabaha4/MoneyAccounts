@@ -196,6 +196,119 @@ test('toggling dashboard balance is logged as activity', function () {
         ->action->toBe('dashboard_balance_shown');
 });
 
+test('showing dashboard balance requires passcode when one is set', function () {
+    $this->user->update([
+        'passcode_hash' => Hash::make('1234'),
+        'hide_dashboard_balance' => true,
+    ]);
+    $this->actingAs($this->user);
+
+    $response = $this->post(route('passcode.dashboard-balance'), [
+        'hidden' => false,
+    ]);
+
+    $response->assertSessionHasErrors(['passcode']);
+    expect($this->user->refresh()->hide_dashboard_balance)->toBeTrue();
+});
+
+test('showing dashboard balance rejects an incorrect passcode', function () {
+    $this->user->update([
+        'passcode_hash' => Hash::make('1234'),
+        'hide_dashboard_balance' => true,
+    ]);
+    $this->actingAs($this->user);
+
+    $response = $this->post(route('passcode.dashboard-balance'), [
+        'hidden' => false,
+        'passcode' => '0000',
+    ]);
+
+    $response->assertSessionHasErrors(['passcode']);
+    expect($this->user->refresh()->hide_dashboard_balance)->toBeTrue();
+});
+
+test('showing dashboard balance succeeds with the correct passcode', function () {
+    $this->user->update([
+        'passcode_hash' => Hash::make('1234'),
+        'hide_dashboard_balance' => true,
+    ]);
+    $this->actingAs($this->user);
+
+    $response = $this->post(route('passcode.dashboard-balance'), [
+        'hidden' => false,
+        'passcode' => '1234',
+    ]);
+
+    $response->assertSessionHasNoErrors();
+    expect($this->user->refresh()->hide_dashboard_balance)->toBeFalse();
+    expect(session('passcode_verified'))->toBeTrue();
+});
+
+test('showing dashboard balance does not require a passcode when none is set', function () {
+    $this->user->update(['hide_dashboard_balance' => true]);
+    $this->actingAs($this->user);
+
+    $response = $this->post(route('passcode.dashboard-balance'), [
+        'hidden' => false,
+    ]);
+
+    $response->assertSessionHasNoErrors();
+    expect($this->user->refresh()->hide_dashboard_balance)->toBeFalse();
+});
+
+test('hiding dashboard balance does not require a passcode when one is set', function () {
+    $this->user->update([
+        'passcode_hash' => Hash::make('1234'),
+        'hide_dashboard_balance' => false,
+    ]);
+    $this->actingAs($this->user);
+
+    $response = $this->post(route('passcode.dashboard-balance'), [
+        'hidden' => true,
+    ]);
+
+    $response->assertSessionHasNoErrors();
+    expect($this->user->refresh()->hide_dashboard_balance)->toBeTrue();
+});
+
+test('passcode settings page exposes hide dashboard balance state', function () {
+    $this->user->update(['hide_dashboard_balance' => true]);
+    $this->actingAs($this->user);
+
+    $this->get(route('passcode.show'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/Passcode')
+            ->where('hasPasscode', false)
+            ->where('hideDashboardBalance', true)
+        );
+});
+
+test('dashboard fully masks account balances when hidden', function () {
+    $this->user->update(['hide_dashboard_balance' => true]);
+    $this->actingAs($this->user);
+
+    \App\Models\Account::factory()->create([
+        'user_id' => $this->user->id,
+        'currency_id' => $this->currency->id,
+        'balance' => 500,
+        'hide_balance' => false,
+    ]);
+
+    $response = $this->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Dashboard')
+        ->where('totalBalance', null)
+        ->has('accounts', 1, fn ($account) => $account
+            ->where('balance', null)
+            ->where('balance_hidden', true)
+            ->etc()
+        )
+    );
+});
+
 test('successful verification is logged as activity', function () {
     $this->user->update(['passcode_hash' => Hash::make('1234')]);
     $this->actingAs($this->user);

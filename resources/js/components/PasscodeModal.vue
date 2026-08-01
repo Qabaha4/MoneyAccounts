@@ -14,9 +14,13 @@ const props = withDefaults(defineProps<{
   open: boolean;
   title?: string;
   description?: string;
+  actionUrl?: string;
+  extraData?: Record<string, unknown>;
 }>(), {
   title: '',
   description: '',
+  actionUrl: '/passcode/verify',
+  extraData: () => ({}),
 });
 
 const emit = defineEmits<{
@@ -74,8 +78,9 @@ const verify = () => {
   submitting.value = true;
   error.value = '';
 
-  router.post('/passcode/verify', {
+  router.post(props.actionUrl, {
     passcode: passcode.value,
+    ...props.extraData,
   }, {
     preserveScroll: true,
     onSuccess: () => {

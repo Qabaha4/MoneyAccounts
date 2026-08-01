@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PasscodeRequest;
 use App\Models\Activity;
+use App\Services\PasscodeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -19,6 +20,7 @@ class PasscodeController extends Controller
 
         return Inertia::render('settings/Passcode', [
             'hasPasscode' => ! empty($user->passcode_hash),
+            'hideDashboardBalance' => (bool) $user->hide_dashboard_balance,
         ]);
     }
 
@@ -59,20 +61,33 @@ class PasscodeController extends Controller
         return back()->with('success', 'Passcode disabled successfully.');
     }
 
-    public function toggleDashboardBalance(Request $request): RedirectResponse
+    public function toggleDashboardBalance(Request $request, PasscodeService $passcodeService): RedirectResponse
     {
         $user = $request->user();
-        $hidden = ! $user->hide_dashboard_balance;
+        $currentlyHidden = (bool) $user->hide_dashboard_balance;
+        $wantHidden = $request->boolean('hidden', !$currentlyHidden);
+
+        if (!$wantHidden && $currentlyHidden && $passcodeService->hasPasscode()) {
+            $request->validate([
+                'passcode' => ['required', 'string'],
+            ]);
+
+            if (!$passcodeService->verify($request->passcode)) {
+                return back()->withErrors(['passcode' => 'Invalid passcode.']);
+            }
+
+            $passcodeService->markVerified();
+        }
 
         $user->update([
-            'hide_dashboard_balance' => $hidden,
+            'hide_dashboard_balance' => $wantHidden,
         ]);
 
         Activity::log(
-            $hidden ? 'dashboard_balance_hidden' : 'dashboard_balance_shown',
+            $wantHidden ? 'dashboard_balance_hidden' : 'dashboard_balance_shown',
             null,
             $user,
-            $hidden ? 'Hidden dashboard balance' : 'Shown dashboard balance',
+            $wantHidden ? 'Hidden dashboard balance' : 'Shown dashboard balance',
             null,
             'passcode'
         );

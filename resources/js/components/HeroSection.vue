@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit } from 'lucide-vue-next';
+import { Edit, Eye, EyeOff } from 'lucide-vue-next';
 
 interface Currency {
     id: number;
@@ -26,6 +26,8 @@ interface Props {
     showStatus?: boolean;
     statusVal?: string;
     showEditButton?: boolean;
+    showBalanceToggle?: boolean;
+    balanceHidden?: boolean;
     showCurrencySelector?: boolean;
     currencies?: Currency[];
     selectedCurrency?: Currency;
@@ -35,12 +37,15 @@ const props = withDefaults(defineProps<Props>(), {
     showStatus: false,
     statusVal: 'Active',
     showEditButton: false,
+    showBalanceToggle: false,
+    balanceHidden: false,
     showCurrencySelector: false,
     currencies: () => [],
 });
 
 const emit = defineEmits<{
     edit: [];
+    toggleBalance: [];
     currencyChange: [currency: Currency];
 }>();
 
@@ -88,6 +93,21 @@ const isNegativeBalance = computed(() => {
                 ></div>
                 {{ props.statusVal }}
             </div>
+        </div>
+
+        <!-- Balance Visibility Toggle -->
+        <div v-if="props.showBalanceToggle" class="absolute top-4 right-4 z-20">
+            <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                @click="emit('toggleBalance')"
+                class="h-9 w-9 p-0 text-white/70 hover:text-white hover:bg-white/10"
+                :title="props.balanceHidden ? t('show_dashboard') : t('hide_dashboard')"
+            >
+                <EyeOff v-if="props.balanceHidden" class="w-4 h-4" />
+                <Eye v-else class="w-4 h-4" />
+            </Button>
         </div>
 
         <div class="relative z-10">
