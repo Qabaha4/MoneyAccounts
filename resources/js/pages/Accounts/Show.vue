@@ -1,17 +1,8 @@
 <template>
   <AppLayout :breadcrumbs="breadcrumbs">
     <template #header>
-      <!-- Error Alert -->
-      <Alert v-if="error" variant="destructive" class="mb-6">
-        <AlertCircle class="h-4 w-4" />
-        <AlertDescription>{{ error }}</AlertDescription>
-      </Alert>
-
       <div class="flex items-center justify-between gap-2 py-0.5">
-        <div v-if="loading">
-          <Skeleton class="h-8 w-48" />
-        </div>
-        <h2 v-else class="font-semibold text-base sm:text-lg text-foreground truncate">
+        <h2 class="font-semibold text-base sm:text-lg text-foreground truncate">
           {{ account.name }}
         </h2>
         <div class="flex items-center gap-1">
@@ -33,10 +24,31 @@
 
     <div class="py-4 sm:py-6">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <!-- Lock Screen -->
+        <Card v-if="props.locked" class="text-center py-12">
+          <CardContent class="flex flex-col items-center gap-4">
+            <div class="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center">
+              <Lock class="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 class="text-lg font-semibold text-foreground">
+              {{ t('passcode.account_locked') }}
+            </h3>
+            <p class="text-sm text-muted-foreground max-w-sm">
+              {{ t('passcode.account_locked_description') }}
+            </p>
+            <Button @click="isPasscodeModalOpen = true">
+              <Lock class="w-4 h-4 me-2" />
+              {{ t('passcode.unlock') }}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <template v-if="!props.locked">
         <!-- Hero Section -->
-        <HeroSection 
-          :main-sec-val="`${formatAmount(totalBalance)} ${account.currency.symbol}`"
-          :main-sec-label="t('dashboard.total_balance')"
+        <div class="relative">
+          <HeroSection 
+            :main-sec-val="displayBalance"
+            :main-sec-label="t('dashboard.total_balance')"
           :sub-sec-p1-val="account.name"
           :sub-sec-p1-label="t('dashboard.account_name')"
           :sub-sec-p2-val="`${monthlyTransactionsCount}`"
@@ -47,7 +59,18 @@
           :status-val="account.is_active ? t('accounts.active') : t('accounts.inactive')"
           :show-edit-button="true"
           @edit="openAccountEditModal"
-        />
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            type="button"
+            class="absolute bottom-2 right-2 z-20 text-white/70 hover:text-white hover:bg-white/10"
+            @click="toggleBalanceEye"
+          >
+            <EyeOff v-if="localBalanceHidden" class="w-4 h-4" />
+            <Eye v-else class="w-4 h-4" />
+          </Button>
+        </div>
 
         <!-- Account Description (if exists) -->
         <Card v-if="account.description">
@@ -100,24 +123,16 @@
               />
             </div>
 
-            <div v-if="loading" class="space-y-3">
-              <div v-for="i in 3" :key="i" class="flex items-center gap-3 p-3 border border-border/50 rounded-xl">
-                <Skeleton class="h-12 w-12 rounded-xl" />
-                <div class="flex-1 space-y-2">
-                  <Skeleton class="h-4 w-32" />
-                  <Skeleton class="h-3 w-24" />
-                </div>
-                <Skeleton class="h-5 w-20" />
-              </div>
-            </div>
-
-            <div v-else-if="filteredTransactions.length > 0" class="space-y-2">
+            <div v-if="filteredTransactions.length > 0" class="space-y-2">
               <div 
                 v-for="transaction in filteredTransactions" 
                 :key="transaction.id"
-                class="group flex items-center gap-3 p-3 rounded-xl hover:bg-accent/30 transition-all cursor-pointer border border-border/50"
-                @click="openEditModal(transaction)"
+                :data-transaction-id="transaction.id"
+                class="group flex items-center gap-3 p-3 rounded-xl hover:bg-accent/30 transition-all cursor-pointer border border-border/50 relative overflow-hidden"
+                :class="highlightedTxId === transaction.id ? 'bg-primary/5 highlight-pulse' : ''"
+                @click="openViewModal(transaction)"
               >
+                <div v-if="highlightedTxId === transaction.id" class="absolute left-0 top-0 bottom-0 w-1 bg-primary highlight-bar" />
                 <!-- Icon -->
                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-secondary/50 flex items-center justify-center flex-shrink-0">
                   <span 
@@ -194,7 +209,7 @@
               </Button>
             </div>
 
-            <div v-if="!loading && filteredTransactions.length === 0" class="text-center py-12">
+            <div v-if="filteredTransactions.length === 0" class="text-center py-12">
               <div class="rounded-full w-16 h-16 bg-secondary/50 flex items-center justify-center mx-auto mb-4">
                 <component :is="searchQuery.trim() ? Search : Receipt" class="w-8 h-8 text-muted-foreground" />
               </div>
@@ -215,18 +230,35 @@
           </CardContent>
         </Card>
 
+        </template>
 
       </div>
     </div>
 
+    <!-- Passcode Modal -->
+    <PasscodeModal
+      v-model:open="isPasscodeModalOpen"
+    />
+
     <!-- Transaction Modal -->
     <TransactionModal
-      v-model:is-open="isTransactionModalOpen"
+      :is-open="isTransactionModalOpen"
       :accounts="props.accounts"
       :transaction="editingTransaction"
       :default-account-id="account.id"
       :allow-account-change="!!editingTransaction"
+      @update:is-open="isTransactionModalOpen = $event; handleEditClose($event)"
       @success="handleTransactionSuccess"
+    />
+
+    <!-- Transaction View Modal -->
+    <TransactionDetailModal
+      :is-open="isViewModalOpen"
+      :transaction="viewingTransaction"
+      hide-actions
+      allow-edit
+      @update:is-open="isViewModalOpen = $event"
+      @edit="handleViewEdit"
     />
 
     <!-- Account Edit Modal -->
@@ -234,29 +266,31 @@
       v-model:open="isAccountModalOpen"
       :account="props.account"
       :currencies="props.currencies"
+      :has-passcode="props.hasPasscode"
       @success="handleAccountSuccess"
     />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { computed, ref, watch, onMounted, nextTick } from 'vue'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { Input } from '@/components/ui/input'
-import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, AlertCircle, Search, Printer, Loader2 } from 'lucide-vue-next'
+import { Plus, Eye, Edit, ArrowLeft, ArrowRight, Receipt, Search, Printer, Loader2, Lock, EyeOff } from 'lucide-vue-next'
 import accounts from '@/routes/accounts'
 import transactions from '@/routes/transactions'
 import TransactionModal from '@/components/TransactionModal.vue'
+import TransactionDetailModal from '@/components/TransactionDetailModal.vue'
 import AccountFormModal from '@/components/AccountFormModal.vue'
 import HeroSection from '@/components/HeroSection.vue'
+import PasscodeModal from '@/components/PasscodeModal.vue'
 import { type BreadcrumbItem } from '@/types'
 import { useFormatting } from '@/composables/useFormatting'
 import { useAccountType } from '@/composables/useAccountType'
@@ -271,7 +305,7 @@ interface Currency {
 }
 
 interface Transaction {
-  id: number
+  id: string
   type: 'income' | 'expense' | 'transfer'
   amount: string
   description: string
@@ -285,10 +319,10 @@ interface Transaction {
 }
 
 interface Account {
-  id: number
+  id: string
   name: string
   type: string
-  balance: number
+  balance: number | null
   initial_balance: number
   is_active: boolean
   currency: Currency
@@ -297,6 +331,9 @@ interface Account {
   description: string | null
   created_at: string
   updated_at: string
+  balance_hidden?: boolean
+  is_locked?: boolean
+  hide_balance?: boolean
 }
 
 const props = defineProps<{
@@ -309,6 +346,8 @@ const props = defineProps<{
     total: number
     last_page: number
   }
+  locked?: boolean
+  hasPasscode: boolean
 }>()
 
 const { t } = useI18n()
@@ -326,15 +365,18 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ]
 
-const loading = ref(false)
-const error = ref<string | null>(null)
 const isTransactionModalOpen = ref(false)
+const isViewModalOpen = ref(false)
 const editingTransaction = ref<Transaction | null>(null)
+const viewingTransaction = ref<Transaction | null>(null)
+const returningFromView = ref(false)
 const isAccountModalOpen = ref(false)
+const isPasscodeModalOpen = ref(false)
 const searchQuery = ref('')
 const allTransactions = ref<Transaction[]>([])
 const loadingMore = ref(false)
 const isAppendingTransactions = ref(false)
+const highlightedTxId = ref<string | null>(null)
 
 // Initialize accumulated transactions from server prop
 const currentPage = ref(props.transactionsMeta?.current_page ?? 1)
@@ -352,7 +394,16 @@ watch(() => props.account?.transactions, (transactions) => {
 }, { immediate: true })
 
 // Computed properties for HeroSection component
-const totalBalance = computed(() => props.account.balance)
+const totalBalance = computed(() => props.account.balance ?? 0)
+
+const localBalanceHidden = ref(props.account.hide_balance ?? false)
+
+const displayBalance = computed(() => {
+  if (localBalanceHidden.value) {
+    return `•••• ${props.account.currency.symbol}`
+  }
+  return `${formatAmount(props.account.balance ?? 0)} ${props.account.currency.symbol}`
+})
 const accountsForHero = computed(() => [props.account])
 const recentTransactionsForHero = computed(() => allTransactions.value.slice(0, 3))
 
@@ -391,15 +442,6 @@ const monthlyTransactionsCount = computed(() => {
            transactionDate.getFullYear() === currentYear
   }).length
 })
-
-const handleError = (errorMessage: string) => {
-  error.value = errorMessage
-  console.error('Account Show Error:', errorMessage)
-}
-
-const setLoading = (loadingState: boolean) => {
-  loading.value = loadingState
-}
 
 const getTransactionVariant = (type: string) => {
   switch (type) {
@@ -461,20 +503,6 @@ const formatDate = (dateString: string) => {
   return fmtDateTime(dateString)
 }
 
-onMounted(() => {
-  if (!props.account) {
-    handleError('Account data not found')
-    return
-  }
-
-  if (!props.account.currency) {
-    handleError('Account currency information is missing')
-    return
-  }
-
-  error.value = null
-})
-
 const loadMoreTransactions = () => {
   if (loadingMore.value || !hasMore.value) return
 
@@ -508,29 +536,88 @@ const showAllTransactions = () => {
 
 const openCreateModal = () => {
   editingTransaction.value = null
+  returningFromView.value = false
   isTransactionModalOpen.value = true
+}
+
+const openViewModal = (transaction: Transaction) => {
+  viewingTransaction.value = transaction
+  isViewModalOpen.value = true
+}
+
+const handleViewEdit = (transaction: any) => {
+  isViewModalOpen.value = false
+  editingTransaction.value = transaction
+  returningFromView.value = true
+  nextTick(() => {
+    isTransactionModalOpen.value = true
+  })
+}
+
+const handleEditClose = (open: boolean) => {
+  if (!open && returningFromView.value && viewingTransaction.value) {
+    returningFromView.value = false
+    isViewModalOpen.value = true
+  }
 }
 
 const openEditModal = (transaction: Transaction) => {
   editingTransaction.value = transaction
+  returningFromView.value = false
   isTransactionModalOpen.value = true
 }
 
 const handleTransactionSuccess = () => {
-  // Form submission already redirected and updated props; watch handles sync
+  if (returningFromView.value && editingTransaction.value) {
+    const updatedTx = props.account?.transactions?.find(
+      t => t.id === editingTransaction.value!.id
+    )
+    if (updatedTx) {
+      viewingTransaction.value = updatedTx
+    } else {
+      returningFromView.value = false
+      viewingTransaction.value = null
+    }
+  }
 }
 
 const openAccountEditModal = () => {
   isAccountModalOpen.value = true
 }
 
+const toggleBalanceEye = () => {
+  localBalanceHidden.value = !localBalanceHidden.value
+}
+
 const handleAccountSuccess = () => {
   // Form submission already redirected and updated props; watch handles sync
 }
 
-const navigateToAccount = (accountId: number) => {
+const navigateToAccount = (accountId: string) => {
   router.visit(accounts.show({ account: accountId }).url)
 }
+
+// Parse highlight param and scroll to transaction
+const highlightTxId = computed(() => {
+  const params = new URLSearchParams(window.location.search)
+  const id = params.get('highlight')
+  return id || null
+})
+
+onMounted(async () => {
+  if (!highlightTxId.value) return
+  highlightedTxId.value = highlightTxId.value
+  await nextTick()
+  const el = document.querySelector(`[data-transaction-id="${highlightedTxId.value}"]`)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    el.classList.add('highlight-active')
+    setTimeout(() => {
+      el.classList.remove('highlight-active')
+      highlightedTxId.value = null
+    }, 4000)
+  }
+})
 
 const openPrintReport = () => {
   router.visit(`/accounts/${props.account.id}/report`)
@@ -541,5 +628,45 @@ const openPrintReport = () => {
 .bg-grid-white\/\[0\.02\] {
   background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+.highlight-bar {
+  animation: barIn 0.4s ease-out;
+}
+
+.highlight-pulse {
+  animation: pulseGlow 2s ease-in-out;
+}
+
+.highlight-active {
+  box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 20px -4px hsl(var(--primary) / 0.3);
+  transition: box-shadow 0.8s ease-out;
+}
+
+.highlight-active.highlight-active {
+  animation: none;
+}
+
+@keyframes barIn {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: none;
+  }
+  20% {
+    box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 24px -4px hsl(var(--primary) / 0.35);
+  }
+  60% {
+    box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 12px -4px hsl(var(--primary) / 0.15);
+  }
 }
 </style>

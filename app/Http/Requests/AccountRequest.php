@@ -46,6 +46,9 @@ class AccountRequest extends FormRequest
             'initial_balance' => 'nullable|numeric|min:0',
             'description' => 'nullable|string|max:1000',
             'is_active' => 'boolean',
+            'is_locked' => 'boolean',
+            'hide_balance' => 'boolean',
+            'passcode' => 'nullable|string|max:6',
         ];
     }
 
@@ -110,7 +113,7 @@ class AccountRequest extends FormRequest
         $validated = $this->validated();
         
         // Remove fields that shouldn't be updated
-        unset($validated['initial_balance'], $validated['user_id']);
+        unset($validated['initial_balance'], $validated['user_id'], $validated['passcode']);
         
         return $validated;
     }

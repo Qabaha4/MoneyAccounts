@@ -6,11 +6,12 @@ import { toUrl, urlIsActive } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editPassword } from '@/routes/password';
 import { edit as editProfile } from '@/routes/profile';
-import { show } from '@/routes/two-factor';
+import { show as showTwoFactor } from '@/routes/two-factor';
+import { show as showPasscode } from '@/routes/passcode';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { User, Key, ShieldCheck, Palette } from 'lucide-vue-next';
+import { User, Key, ShieldCheck, Palette, Lock } from 'lucide-vue-next';
 
 const { t } = useI18n();
 
@@ -27,8 +28,13 @@ const sidebarNavItems: NavItem[] = [
     },
     {
         title: t('settings.two_factor'),
-        href: show(),
+        href: showTwoFactor(),
         icon: ShieldCheck,
+    },
+    {
+        title: t('settings.passcode'),
+        href: showPasscode(),
+        icon: Lock,
     },
     {
         title: t('settings.appearance'),

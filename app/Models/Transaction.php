@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCustomId;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +12,23 @@ use Illuminate\Support\Facades\Auth;
 
 class Transaction extends Model
 {
+    use HasCustomId, HasFactory;
+
+    public static function customIdPrefix(): string
+    {
+        return 'trn-';
+    }
+
+    public static function customIdModelType(): string
+    {
+        return 'transaction';
+    }
+
+    public static function customIdPeriod(): string
+    {
+        return now()->format('ymd');
+    }
+
     protected $fillable = [
         'user_id',
         'account_id',
@@ -78,6 +97,15 @@ class Transaction extends Model
                     $transaction->transferToAccount->updateBalance();
                 }
             }
+
+            if (Auth::check()) {
+                Activity::log('created', $transaction, Auth::user(), "Created {$transaction->type} of \${$transaction->amount}", [
+                    'account_id' => $transaction->account_id,
+                    'account_name' => $transaction->account?->name,
+                    'amount' => $transaction->amount,
+                    'type' => $transaction->type,
+                ]);
+            }
         });
 
         static::updated(function ($transaction) {
@@ -101,6 +129,43 @@ class Transaction extends Model
                     }
                 }
             }
+            // Update old destination account if transfer_to_account_id changed
+            if ($transaction->isDirty('transfer_to_account_id')) {
+                $oldTransferToAccountId = $transaction->getOriginal('transfer_to_account_id');
+                if ($oldTransferToAccountId) {
+                    $oldAccount = Account::find($oldTransferToAccountId);
+                    if ($oldAccount) {
+                        $oldAccount->updateBalance();
+                    }
+                }
+            }
+
+            if (Auth::check()) {
+                $changes = [];
+                foreach ($transaction->getDirty() as $field => $newValue) {
+                    $changes[$field] = match ($field) {
+                        'account_id' => [
+                            'from' => optional(Account::find($transaction->getOriginal($field)))->name ?? $transaction->getOriginal($field),
+                            'to' => optional(Account::find($newValue))->name ?? $newValue,
+                        ],
+                        'transfer_to_account_id' => [
+                            'from' => optional(Account::find($transaction->getOriginal($field)))->name ?? $transaction->getOriginal($field),
+                            'to' => optional(Account::find($newValue))->name ?? $newValue,
+                        ],
+                        default => [
+                            'from' => $transaction->getOriginal($field),
+                            'to' => $newValue,
+                        ],
+                    };
+                }
+                Activity::log('updated', $transaction, Auth::user(), "Updated transaction #{$transaction->id}", [
+                    'changes' => $changes,
+                    'account_id' => $transaction->account_id,
+                    'account_name' => $transaction->account?->name,
+                    'amount' => $transaction->amount,
+                    'type' => $transaction->type,
+                ]);
+            }
         });
 
         static::deleted(function ($transaction) {
@@ -113,6 +178,15 @@ class Transaction extends Model
                 if ($transaction->transferToAccount) {
                     $transaction->transferToAccount->updateBalance();
                 }
+            }
+
+            if (Auth::check()) {
+                Activity::log('deleted', $transaction, Auth::user(), "Deleted transaction #{$transaction->id}", [
+                    'account_id' => $transaction->account_id,
+                    'account_name' => $transaction->account?->name,
+                    'amount' => $transaction->amount,
+                    'type' => $transaction->type,
+                ]);
             }
         });
     }

@@ -12,19 +12,17 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import {
     Search,
     CreditCard,
     ArrowUpDown,
     Calendar,
-    DollarSign,
     X,
 } from 'lucide-vue-next';
 import { useFormatting } from '@/composables/useFormatting';
 
 interface SearchResult {
-    id: number;
+    id: string;
     type: 'account' | 'transaction';
     title: string;
     description?: string;
@@ -53,7 +51,6 @@ const emit = defineEmits<{
 
 const searchQuery = ref('');
 const searchResults = ref<SearchResponse | null>(null);
-const isLoading = ref(false);
 const selectedIndex = ref(-1);
 const searchInput = ref<HTMLInputElement>();
 
@@ -86,8 +83,6 @@ const performSearch = async (query: string) => {
         return;
     }
 
-    isLoading.value = true;
-    
     try {
         const response = await fetch(`/search?query=${encodeURIComponent(query)}`, {
             method: 'GET',
@@ -107,8 +102,6 @@ const performSearch = async (query: string) => {
     } catch (error) {
         console.error('Search error:', error);
         searchResults.value = null;
-    } finally {
-        isLoading.value = false;
     }
 };
 
@@ -239,15 +232,9 @@ watch(isDialogOpen, async (isOpen) => {
             </div>
 
             <div class="flex-1 overflow-y-auto max-h-96">
-                <!-- Loading State -->
-                <div v-if="isLoading" class="flex items-center justify-center py-8">
-                    <LoadingSpinner class="h-6 w-6" />
-                    <span class="ltr:ml-2 rtl:mr-2 text-sm text-muted-foreground">{{ t('search.searching') }}</span>
-                </div>
-
                 <!-- No Results -->
                 <div
-                    v-else-if="searchQuery && !hasResults && !isLoading"
+                    v-if="searchQuery && !hasResults"
                     class="flex flex-col items-center justify-center py-8 text-center"
                 >
                     <Search class="h-12 w-12 text-muted-foreground mb-4" />
@@ -343,8 +330,7 @@ watch(isDialogOpen, async (isOpen) => {
                                     </p>
                                 </div>
                                 <div class="ltr:text-right rtl:text-left">
-                                    <p class="font-medium flex items-center gap-1">
-                                        <DollarSign class="h-4 w-4" />
+                                    <p class="font-medium">
                                         {{ formatCurrency(transaction.amount!, transaction.currency) }}
                                     </p>
                                 </div>

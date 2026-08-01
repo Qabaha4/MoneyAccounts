@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('accounts', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Tenant scoping
+            $table->string('id', 20)->primary();
+            $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('currency_id')->constrained()->onDelete('restrict');
             $table->string('name');
             $table->text('description')->nullable();

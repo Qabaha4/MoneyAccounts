@@ -18,7 +18,7 @@ import { index as transactionsIndex } from '@/routes/transactions';
 import { index as reportIndex } from '@/routes/report';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { Folder, LayoutGrid, Wallet, Receipt, Globe, Moon, Sun, Languages, FileText, Shield } from 'lucide-vue-next';
+import { Folder, LayoutGrid, Wallet, Receipt, Globe, Moon, Sun, Languages, FileText, Shield, History } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import { useAppearance } from '@/composables/useAppearance';
 import { useLocale } from '@/composables/useLocale';
@@ -52,6 +52,11 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: t('app.report'),
             href: reportIndex().url,
             icon: FileText,
+        },
+        {
+            title: t('app.activity'),
+            href: '/activity',
+            icon: History,
         },
     ];
 

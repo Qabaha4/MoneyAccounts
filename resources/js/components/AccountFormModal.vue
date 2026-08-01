@@ -82,7 +82,7 @@
           <div v-if="isEditing && account" class="space-y-2">
             <Label>{{ t('accounts.current_balance') }}</Label>
             <div class="p-3 bg-muted rounded-lg border border-border/50">
-              <span class="text-lg font-semibold" :class="account.balance >= 0 ? 'text-success' : 'text-destructive'">
+              <span class="text-lg font-semibold" :class="(account.balance ?? 0) >= 0 ? 'text-success' : 'text-destructive'">
                 {{ account.currency.symbol }}{{ formatAmount(account.balance) }}
               </span>
             </div>
@@ -98,6 +98,48 @@
               v-model="form.is_active"
             />
             <Label for="is_active">{{ t('accounts.active_account') }}</Label>
+          </div>
+
+          <!-- Passcode (edit only) -->
+          <div v-if="isEditing" class="space-y-2 pt-4 border-t">
+            <Label for="edit-passcode">{{ t('passcode.edit_passcode_label') }}</Label>
+            <Input
+              id="edit-passcode"
+              v-model="form.passcode"
+              type="password"
+              inputmode="numeric"
+              maxlength="6"
+              autocomplete="off"
+              :disabled="!props.hasPasscode"
+              :placeholder="t('passcode.edit_passcode_placeholder')"
+            />
+            <p v-if="form.errors.passcode" class="text-sm text-red-600">{{ form.errors.passcode }}</p>
+          </div>
+
+          <!-- Lock & Hide Toggles (edit only) -->
+          <div v-if="isEditing" class="flex flex-col gap-3 pt-4 border-t">
+            <div dir="ltr" class="flex rtl:justify-end items-center space-x-2">
+              <Switch
+                id="is_locked"
+                v-model="form.is_locked"
+                :disabled="!props.hasPasscode"
+              />
+              <Label for="is_locked">{{ t('passcode.lock_account') }}</Label>
+            </div>
+            <div dir="ltr" class="flex rtl:justify-end items-center space-x-2">
+              <Switch
+                id="hide_balance"
+                v-model="form.hide_balance"
+                :disabled="!props.hasPasscode"
+              />
+              <Label for="hide_balance">{{ t('passcode.hide_balance') }}</Label>
+            </div>
+            <p v-if="isEditing && !props.hasPasscode" class="text-sm text-muted-foreground">
+              {{ t('passcode.setup_required') }}
+              <Link :href="'/settings/passcode'" class="text-primary underline underline-offset-2">
+                {{ t('passcode.settings_link') }}
+              </Link>
+            </p>
           </div>
         </div>
 
@@ -133,12 +175,19 @@
         </DialogFooter>
       </form>
     </DialogContent>
+    <ConfirmDialog
+      :open="showDeleteConfirm"
+      :message="t('accounts.confirm_delete_with_name', { name: props.account?.name || '' })"
+      @update:open="showDeleteConfirm = $event"
+      @confirm="handleDeleteConfirmed"
+      @cancel="showDeleteConfirm = false"
+    />
   </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue'
-import { useForm, router } from '@inertiajs/vue3'
+import { useForm, router, Link } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import { useFormatting } from '@/composables/useFormatting'
 import { Button } from '@/components/ui/button'
@@ -147,6 +196,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { Trash2, Save, Plus } from 'lucide-vue-next'
 import accountRoutes from '@/routes/accounts'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -162,7 +212,7 @@ interface Currency {
 }
 
 interface Account {
-  id: number
+  id: string
   name: string
   balance: number
   initial_balance: number
@@ -178,6 +228,7 @@ interface Props {
   open: boolean
   currencies: Currency[]
   account?: Account | null
+  hasPasscode: boolean
 }
 
 interface Emits {
@@ -186,7 +237,8 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  account: null
+  account: null,
+  hasPasscode: false,
 })
 
 const emit = defineEmits<Emits>()
@@ -198,6 +250,7 @@ const isOpen = computed({
 
 const isEditing = computed(() => !!props.account)
 const deleting = ref(false)
+const showDeleteConfirm = ref(false)
 
 const form = useForm({
   name: '',
@@ -205,6 +258,9 @@ const form = useForm({
   type: 'checking',
   initial_balance: '',
   is_active: true,
+  passcode: '',
+  is_locked: false,
+  hide_balance: false,
 })
 
 // Watch for account changes to populate form
@@ -215,6 +271,9 @@ watch(() => props.account, (account) => {
     form.type = account.type
     form.is_active = account.is_active
     form.initial_balance = account.initial_balance.toString()
+    form.is_locked = (account as any).is_locked ?? false
+    form.hide_balance = (account as any).hide_balance ?? false
+    form.passcode = ''
   } else {
     // Reset form for create
     form.reset()
@@ -232,6 +291,9 @@ watch(isOpen, (open) => {
     form.type = props.account.type
     form.is_active = props.account.is_active
     form.initial_balance = props.account.initial_balance.toString()
+    form.is_locked = (props.account as any).is_locked ?? false
+    form.hide_balance = (props.account as any).hide_balance ?? false
+    form.passcode = ''
     form.clearErrors()
   } else if (!open) {
     // Reset form when modal closes
@@ -263,26 +325,25 @@ const closeModal = () => {
 }
 
 const confirmDelete = () => {
+  showDeleteConfirm.value = true
+}
+
+const handleDeleteConfirmed = () => {
   if (!props.account) return
-  
-  const confirmMessage = t('accounts.confirm_delete_with_name', { name: props.account.name })
-  
-  if (confirm(confirmMessage)) {
-    deleting.value = true
-    
-    router.delete(accountRoutes.destroy(props.account.id).url, {
-      onSuccess: () => {
-        closeModal()
-        emit('success')
-      },
-      onError: (errors) => {
-        console.error('Delete failed:', errors)
-        // Handle error - could show a toast or alert
-      },
-      onFinish: () => {
-        deleting.value = false
-      }
-    })
-  }
+  showDeleteConfirm.value = false
+  deleting.value = true
+
+  router.delete(accountRoutes.destroy(props.account.id).url, {
+    onSuccess: () => {
+      closeModal()
+      emit('success')
+    },
+    onError: (errors) => {
+      console.error('Delete failed:', errors)
+    },
+    onFinish: () => {
+      deleting.value = false
+    }
+  })
 }
 </script>

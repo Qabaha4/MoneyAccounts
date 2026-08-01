@@ -46,22 +46,20 @@ interface Props {
 }
 
 interface SearchAccount {
-    id: number;
+    id: string;
     name: string;
     description?: string;
 }
 
 interface SearchTransaction {
-    id: number;
+    id: string;
     description: string;
     amount: number;
-    account_id: number;
+    account_id: string;
     account?: {
         name: string;
     };
-    currency?: {
-        code: string;
-    };
+    currency?: string;
 }
 
 interface SearchResults {
@@ -128,13 +126,13 @@ const handleSearchBlur = () => {
     }, 200);
 };
 
-const navigateToAccount = (accountId: number) => {
+const navigateToAccount = (accountId: string) => {
     router.visit(`/accounts/${accountId}`);
     isSearchFocused.value = false;
     searchQuery.value = '';
 };
 
-const navigateToTransaction = (transactionId: number) => {
+const navigateToTransaction = (transactionId: string) => {
     // Navigate to the account that contains this transaction
     const transaction = searchResults.value.transactions.find(t => t.id === transactionId);
     if (transaction?.account_id) {
@@ -352,7 +350,7 @@ const rightNavItems: NavItem[] = [
                                             <div class="flex-1 min-w-0">
                                                 <p class="text-sm font-medium truncate">{{ transaction.description }}</p>
                                                 <p class="text-xs text-muted-foreground truncate">
-                                                    {{ transaction.account?.name }} • {{ formatCurrency(transaction.amount, transaction.currency?.code) }}
+                                                    {{ transaction.account?.name }} • {{ formatCurrency(transaction.amount, transaction.currency || 'USD') }}
                                                 </p>
                                             </div>
                                         </div>

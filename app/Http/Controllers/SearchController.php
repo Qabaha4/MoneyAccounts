@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SearchController extends Controller
 {
@@ -18,14 +19,23 @@ class SearchController extends Controller
             'query' => 'required|string|min:1|max:255',
         ]);
 
-        $query = $request->input('query');
-        $user = Auth::user();
+        $query = trim($request->input('query'));
+        $isMysql = DB::connection()->getDriverName() === 'mysql';
+        $ftQuery = $isMysql ? $this->buildFulltextQuery($query) : null;
 
-        // Search accounts by name (with tenant scoping automatically applied)
         $accounts = Account::with('currency')
-            ->where('name', 'LIKE', "%{$query}%")
-            ->orWhere('description', 'LIKE', "%{$query}%")
-            ->orderBy('name')
+            ->where(function ($q) use ($query, $isMysql, $ftQuery) {
+                if ($isMysql && $ftQuery) {
+                    $q->whereRaw('MATCH(name, description) AGAINST(? IN BOOLEAN MODE)', [$ftQuery]);
+                }
+                $q->orWhere('name', 'LIKE', "%{$query}%")
+                  ->orWhere('description', 'LIKE', "%{$query}%");
+            })
+            ->when($isMysql && $ftQuery, function ($q) use ($ftQuery) {
+                return $q->orderByRaw('MATCH(name, description) AGAINST(? IN BOOLEAN MODE) DESC', [$ftQuery]);
+            }, function ($q) {
+                return $q->orderBy('name');
+            })
             ->limit(10)
             ->get()
             ->map(function ($account) {
@@ -33,19 +43,21 @@ class SearchController extends Controller
                     'id' => $account->id,
                     'name' => $account->name,
                     'description' => $account->description,
-                    'balance' => $account->balance,
+                    'balance' => (float) $account->balance,
                     'is_active' => $account->is_active,
                     'currency' => $account->currency->code,
                 ];
             });
 
-        // Search transactions by description and notes (with tenant scoping automatically applied)
         $transactions = Transaction::with(['account.currency', 'transferToAccount'])
-            ->where(function ($q) use ($query) {
-                $q->where('description', 'LIKE', "%{$query}%")
-                    ->orWhere('notes', 'LIKE', "%{$query}%")
-                    ->orWhere('category', 'LIKE', "%{$query}%")
-                    ->orWhere('reference_number', 'LIKE', "%{$query}%");
+            ->where(function ($q) use ($query, $isMysql, $ftQuery) {
+                if ($isMysql && $ftQuery) {
+                    $q->whereRaw('MATCH(description, notes, category, reference_number) AGAINST(? IN BOOLEAN MODE)', [$ftQuery]);
+                }
+                $q->orWhere('description', 'LIKE', "%{$query}%")
+                  ->orWhere('notes', 'LIKE', "%{$query}%")
+                  ->orWhere('category', 'LIKE', "%{$query}%")
+                  ->orWhere('reference_number', 'LIKE', "%{$query}%");
             })
             ->orderBy('transaction_date', 'desc')
             ->limit(15)
@@ -55,7 +67,7 @@ class SearchController extends Controller
                     'id' => $transaction->id,
                     'account_id' => $transaction->account_id,
                     'description' => $transaction->description,
-                    'amount' => $transaction->amount,
+                    'amount' => (float) $transaction->amount,
                     'type' => $transaction->type,
                     'transaction_date' => $transaction->transaction_date,
                     'transfer_to_account' => $transaction->transferToAccount ? [
@@ -74,5 +86,24 @@ class SearchController extends Controller
             'transactions' => $transactions,
             'total_results' => $accounts->count() + $transactions->count(),
         ]);
+    }
+
+    /**
+     * Build a MySQL FULLTEXT boolean-mode query with prefix matching
+     * "checking account" → "+checking* +account*"
+     */
+    private function buildFulltextQuery(string $query): string
+    {
+        $words = preg_split('/[\s,]+/', $query, -1, PREG_SPLIT_NO_EMPTY);
+        $terms = [];
+
+        foreach ($words as $word) {
+            $word = preg_replace('/[+\-><()~*@"\'\\\\:;!?]/', '', $word);
+            if (strlen($word) > 0) {
+                $terms[] = '+' . $word . '*';
+            }
+        }
+
+        return $terms ? implode(' ', $terms) : '+' . $query . '*';
     }
 }

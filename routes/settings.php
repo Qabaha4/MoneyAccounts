@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\PasscodeController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
@@ -25,4 +26,14 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');
+
+    Route::get('settings/passcode', [PasscodeController::class, 'show'])
+        ->name('passcode.show');
+    Route::post('settings/passcode', [PasscodeController::class, 'update'])
+        ->name('passcode.update');
+    Route::delete('settings/passcode', [PasscodeController::class, 'destroy'])
+        ->name('passcode.destroy');
+    Route::post('settings/passcode/dashboard-balance', [PasscodeController::class, 'toggleDashboardBalance'])
+        ->middleware('throttle:5,1')
+        ->name('passcode.dashboard-balance');
 });

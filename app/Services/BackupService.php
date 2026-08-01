@@ -103,7 +103,7 @@ class BackupService
         return Backup::orderBy('created_at', 'desc')->paginate($perPage);
     }
 
-    public function findById(int $id): ?Backup
+    public function findById(string $id): ?Backup
     {
         return Backup::find($id);
     }

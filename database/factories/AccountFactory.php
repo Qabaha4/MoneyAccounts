@@ -35,6 +35,8 @@ class AccountFactory extends Factory
             'initial_balance' => $this->faker->randomFloat(2, 0, 5000),
             'description' => $this->faker->optional()->sentence(),
             'is_active' => true,
+            'is_locked' => false,
+            'hide_balance' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ];

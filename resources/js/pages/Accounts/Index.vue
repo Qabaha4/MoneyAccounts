@@ -1,5 +1,5 @@
 <template>
-  <AppLayout :title="t('accounts.title')">
+  <AppLayout :breadcrumbs="breadcrumbs">
     <template #header>
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 class="font-semibold text-xl text-foreground leading-tight">
@@ -185,13 +185,8 @@
           </CardContent>
         </Card>
 
-        <!-- Loading State -->
-        <div v-if="isLoading || isRefreshing">
-          <AccountSkeleton :count="6" />
-        </div>
-
         <!-- Accounts Grid -->
-        <div v-else-if="props.accounts.length > 0" class="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-max">
+        <div v-if="props.accounts?.length > 0" class="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-max">
           <Card 
             v-for="account in props.accounts" 
             :key="account.id" 
@@ -227,11 +222,34 @@
                   <div class="text-xs font-medium text-muted-foreground mb-1">
                     {{ t('accounts.balance') }}
                   </div>
-                  <div 
-                    class="text-lg font-bold"
-                    :class="account.balance >= 0 ? 'text-success' : 'text-destructive'"
-                  >
-                    {{ formatCurrency(account.balance, account.currency) }}
+                  <div class="flex items-center gap-1">
+                    <template v-if="localBalanceHidden[account.id]">
+                      <span class="text-sm font-bold text-muted-foreground">••••</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-6 w-6 p-0"
+                        @click.stop="toggleBalanceEye(account)"
+                      >
+                        <EyeOff class="w-3 h-3" />
+                      </Button>
+                    </template>
+                    <template v-else>
+                      <div 
+                        class="text-lg font-bold"
+                        :class="(account.balance ?? 0) >= 0 ? 'text-success' : 'text-destructive'"
+                      >
+                        {{ formatCurrency(account.balance ?? 0, account.currency) }}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-6 w-6 p-0"
+                        @click.stop="toggleBalanceEye(account)"
+                      >
+                        <Eye class="w-3 h-3" />
+                      </Button>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -273,7 +291,7 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="!isLoading && !isRefreshing" class="flex items-center justify-center py-16">
+        <div v-else class="flex items-center justify-center py-16">
           <div class="text-center py-8 px-4">
             <div class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-secondary/50 rounded-full flex items-center justify-center mb-4">
               <component :is="hasActiveFilters ? Search : Wallet" class="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
@@ -303,13 +321,14 @@
        v-model:open="isModalOpen"
        :account="editingAccount"
        :currencies="props.currencies"
+       :has-passcode="props.hasPasscode"
        @success="handleModalSuccess"
      />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, nextTick } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
@@ -318,18 +337,30 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus as PlusIcon, Eye, Edit, Wallet, Search, Printer, Landmark, PiggyBank, CreditCard, TrendingUp, Banknote, MoreHorizontal, Filter, X, ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { Plus as PlusIcon, Eye, Edit, Wallet, Search, Printer, Landmark, PiggyBank, CreditCard, TrendingUp, Banknote, MoreHorizontal, Filter, X, ChevronDown, ChevronUp, EyeOff } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useFormatting } from '@/composables/useFormatting'
 import { useAccountType } from '@/composables/useAccountType'
 import accountRoutes from '@/routes/accounts'
 import AccountFormModal from '@/components/AccountFormModal.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import AccountSkeleton from '@/components/AccountSkeleton.vue'
+
+import { type BreadcrumbItem } from '@/types'
+import { dashboard } from '@/routes'
 
 const { t } = useI18n()
 const { formatCurrency } = useFormatting()
 const { getAccountTypeStyle } = useAccountType()
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: t('dashboard.title'),
+        href: dashboard().url,
+    },
+    {
+        title: t('accounts.title'),
+        href: accountRoutes.index().url,
+    },
+]
 interface Currency {
   id: number
   code: string
@@ -338,9 +369,9 @@ interface Currency {
 }
 
 interface Account {
-  id: number
+  id: string
   name: string
-  balance: number
+  balance: number | null
   initial_balance: number
   is_active: boolean
   type: string
@@ -349,6 +380,8 @@ interface Account {
   description?: string | null
   created_at: string
   updated_at: string
+  balance_hidden?: boolean
+  is_locked?: boolean
 }
 
 interface Filters {
@@ -365,20 +398,31 @@ const props = defineProps<{
   accounts: Account[]
   currencies: Currency[]
   filters?: Filters
+  hasPasscode: boolean
 }>()
 
 // Modal state
 const isModalOpen = ref(false)
 const editingAccount = ref<Account | null>(null)
 
-// Loading states
-const isLoading = ref(false)
-const isRefreshing = ref(false)
-
 // Filters state
 const filtersExpanded = ref(false)
 const searchTimeout = ref<number | null>(null)
 const resetKey = ref(0)
+
+const localBalanceHidden = reactive<Record<string, boolean>>({})
+
+watch(() => props.accounts, (accounts) => {
+  accounts.forEach((a) => {
+    if (!(a.id in localBalanceHidden)) {
+      localBalanceHidden[a.id] = a.hide_balance ?? false
+    }
+  })
+}, { immediate: true })
+
+const toggleBalanceEye = (account: Account) => {
+  localBalanceHidden[account.id] = !localBalanceHidden[account.id]
+}
 
 const filterForm = reactive({
   search: props.filters?.search || '',
@@ -471,14 +515,9 @@ const applyFilters = () => {
     filters.sort_by = filterForm.sort_by
   }
 
-  isRefreshing.value = true
-
   router.get('/accounts', filters, {
     preserveState: true,
     preserveScroll: true,
-    onFinish: () => {
-      isRefreshing.value = false
-    }
   })
 }
 
@@ -527,15 +566,10 @@ const openEditModal = (account: Account) => {
 }
 
 const handleModalSuccess = () => {
-  isRefreshing.value = true
-  router.reload({
-    onFinish: () => {
-      isRefreshing.value = false
-    }
-  })
+  router.reload()
 }
 
-const openPrintReport = (accountId: number) => {
+const openPrintReport = (accountId: string) => {
   router.visit(`/accounts/${accountId}/report`)
 }
 </script>

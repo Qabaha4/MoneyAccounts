@@ -7,6 +7,8 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -71,6 +73,12 @@ class AdminPanelProvider extends PanelProvider
             ->passwordReset()
             ->emailVerification()
             ->profile()
+            ->navigationItems([
+                NavigationItem::make('Back to App')
+                    ->url('/dashboard')
+                    ->icon('heroicon-o-arrow-left')
+                    ->sort(-1),
+            ])
             ->userMenuItems([
                 'profile' => \Filament\Navigation\MenuItem::make()
                     ->label('Profile')
@@ -90,6 +98,7 @@ class AdminPanelProvider extends PanelProvider
             // ])
             // ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth('full')
-            ->spa();
+            ->spa()
+            ->spaUrlExceptions(['/']);
     }
 }

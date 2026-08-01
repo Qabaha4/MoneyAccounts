@@ -5,13 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Currency;
 use App\Http\Requests\AccountRequest;
+use App\Services\PasscodeService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AccountController extends Controller
 {
+    protected PasscodeService $passcodeService;
+
+    public function __construct(PasscodeService $passcodeService)
+    {
+        $this->passcodeService = $passcodeService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -24,14 +32,35 @@ class AccountController extends Controller
         // Filter by search term
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('type', 'like', "%{$search}%")
-                    ->orWhereHas('currency', function ($cq) use ($search) {
-                        $cq->where('code', 'like', "%{$search}%")
-                            ->orWhere('name', 'like', "%{$search}%");
-                    });
+            $isMysql = DB::connection()->getDriverName() === 'mysql';
+            $ftQuery = null;
+
+            if ($isMysql) {
+                $words = preg_split('/[\s,]+/', trim($search), -1, PREG_SPLIT_NO_EMPTY);
+                $terms = [];
+                foreach ($words as $word) {
+                    $word = preg_replace('/[+\-><()~*@"\'\\\\:;!?]/', '', $word);
+                    if (strlen($word) > 0) {
+                        $terms[] = '+' . $word . '*';
+                    }
+                }
+                $ftQuery = $terms ? implode(' ', $terms) : '+' . $search . '*';
+            }
+
+            $query->where(function ($q) use ($search, $isMysql, $ftQuery) {
+                if ($isMysql && $ftQuery) {
+                    $q->whereRaw('MATCH(name, description) AGAINST(? IN BOOLEAN MODE)', [$ftQuery])
+                      ->orWhere('name', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+                } else {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+                }
+                $q->orWhere('type', 'like', "%{$search}%")
+                  ->orWhereHas('currency', function ($cq) use ($search) {
+                      $cq->where('code', 'like', "%{$search}%")
+                          ->orWhere('name', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -141,6 +170,18 @@ class AccountController extends Controller
             abort(403);
         }
 
+        // Check if account is locked and passcode not verified
+        if ($account->is_locked && $this->passcodeService->hasPasscode() && !$this->passcodeService->verified()) {
+            $account->load('currency');
+
+            return Inertia::render('Accounts/Show', [
+                'account' => $account,
+                'accounts' => Account::with('currency')->where('user_id', Auth::id())->orderBy('name')->get(),
+                'currencies' => Currency::orderBy('code')->get(),
+                'locked' => true,
+            ]);
+        }
+
         // Load account with currency
         $account->load('currency');
 
@@ -223,6 +264,11 @@ class AccountController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        // Verify passcode if user has one configured
+        if ($this->passcodeService->hasPasscode() && !$this->passcodeService->verify($request->passcode ?? '')) {
+            return back()->withErrors(['passcode' => 'Invalid passcode.']);
+        }
+
         $validatedData = $request->getValidatedDataForUpdate();
 
 
@@ -231,6 +277,22 @@ class AccountController extends Controller
 
         return redirect()->back()
             ->with('success', 'Account updated successfully.');
+    }
+
+    /**
+     * Toggle hide_balance on an account (no passcode required).
+     */
+    public function toggleHideBalance(Account $account)
+    {
+        if ($account->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $account->update([
+            'hide_balance' => !$account->hide_balance,
+        ]);
+
+        return back();
     }
 
     /**
